@@ -5,10 +5,11 @@ headless = true  # This file represents a page section.
 active = true  # Activate this widget? true/false
 weight = 1  # Order that this section will appear.
 
+
 # Slide interval.
 # Use `false` to disable animation or enter a time in ms, e.g. `5000` (5s).
-interval = 2500
-height = "200px"
+interval = 3500
+
 
 # Slides.
 # Duplicate an `[[item]]` block to add more slides.
