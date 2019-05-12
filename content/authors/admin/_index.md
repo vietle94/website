@@ -1,7 +1,7 @@
 ---
 authors:
 - admin
-bio: XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX.
+bio: Data analyst
 education:
   courses:
   - course: Environmental Engineering
