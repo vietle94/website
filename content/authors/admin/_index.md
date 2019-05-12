@@ -5,7 +5,7 @@ bio: Data analyst
 education:
   courses:
   - course: Environmental Engineering
-    institution: Helsinki Univeristy of Applied Sciences
+    institution: Helsinki Metropolia Univeristy of Applied Sciences
     year: 2018
 #  - course: MEng in Artificial Intelligence
 #    institution: Massachusetts Institute of Technology
