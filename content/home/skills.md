@@ -19,10 +19,10 @@ subtitle = ""
   icon_pack = "fab"
   name = "R"
 
-[[feature]]
-  icon = "python"
-  icon_pack = "fab"
-  name = "Python"
+#[[feature]]
+#  icon = "python"
+#  icon_pack = "fab"
+#  name = "Python"
 
 [[feature]]
   icon = "database"

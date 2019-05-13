@@ -1,0 +1,729 @@
+---
+title: "Titanic analysis"
+date: 2019-04-27T07:32:00
+authors: ["admin"]
+output:
+  blogdown::html_page:
+    toc: true
+
+summary: Survival rate of passengers on the Titanic by machine learning.
+categories: ["machine learning"]
+tags: ["machine learning", "random forest", "supported vector machine", "ROC curve", "XGBoost", "desicion tree", "C5.0"]
+---
+
+
+<div id="TOC">
+<ul>
+<li><a href="#intro">Intro</a></li>
+<li><a href="#load-library">Load library</a></li>
+<li><a href="#load-data">Load data</a></li>
+<li><a href="#data-exploration">Data exploration</a><ul>
+<li><a href="#dealing-with-na">Dealing with NA</a></li>
+<li><a href="#visualization">Visualization</a><ul>
+<li><a href="#fare">Fare</a></li>
+<li><a href="#pclass">Pclass</a></li>
+<li><a href="#sex">Sex</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#data-transformation">Data transformation</a><ul>
+<li><a href="#combine-test-and-train-for-feature-selection">Combine test and train for feature selection</a></li>
+<li><a href="#recode-survive-for-caret-train-as-1-and-0-are-not-valid-level-name-in-r">Recode survive for caret train as 1 and 0 are not valid level name in R</a></li>
+<li><a href="#extract-title">Extract Title</a></li>
+<li><a href="#remove-those-title-different-from-miss-master-mr-and-mrs-since-they-are-low-frequency">Remove those title different from Miss, Master, Mr and Mrs since they are low frequency</a></li>
+<li><a href="#make-missingage-predictor-before-we-impute-age">Make Missingage predictor before we impute Age</a></li>
+<li><a href="#use-title-to-predict-age">Use Title to predict Age</a></li>
+<li><a href="#impute-embarked-by-median">Impute Embarked by median</a></li>
+<li><a href="#impute-fare-by-mean">Impute Fare by mean</a></li>
+<li><a href="#family-name">Family name</a></li>
+<li><a href="#transform-fare-to-logfare">Transform Fare to log(Fare)</a></li>
+<li><a href="#make-groupsize-predictor">Make groupsize predictor</a></li>
+<li><a href="#final-look">Final look</a></li>
+</ul></li>
+<li><a href="#training">Training</a><ul>
+<li><a href="#separate-train-and-test-set-since-we-are-done-with-data-transformation">Separate train and test set since we are done with Data transformation</a></li>
+<li><a href="#validation-folds">Validation folds</a></li>
+<li><a href="#traincontrol">Traincontrol</a></li>
+<li><a href="#get-model-info-if-needed">Get model info if needed</a></li>
+<li><a href="#choose-hyperparameters">Choose Hyperparameters</a></li>
+<li><a href="#train-models">Train models</a></li>
+</ul></li>
+<li><a href="#evaluation">Evaluation</a><ul>
+<li><a href="#evaluate-in-train-data">Evaluate in train data</a></li>
+<li><a href="#evaluate-in-holdout-data">Evaluate in holdout data</a></li>
+<li><a href="#evaluate-on-test-data">Evaluate on test data</a></li>
+</ul></li>
+<li><a href="#using-other-set-of-predictors">Using other set of predictors</a></li>
+<li><a href="#using-other-set-of-predictors-1">Using other set of predictors</a></li>
+<li><a href="#using-another-set-of-predictions">Using another set of predictions</a></li>
+<li><a href="#make-other-predictor">Make other predictor</a></li>
+<li><a href="#summary">Summary</a></li>
+</ul>
+</div>
+
+<div id="intro" class="section level1">
+<h1>Intro</h1>
+<p>This is the analysis I used to create the prediction for Kaggle competition. The purpose of the analysis is to use machine learning to predict the survival probability of people on the Titanic. The dataset is provided as follow:</p>
+<ul>
+<li><p>Dataset is divided into train and test set.</p></li>
+<li><p>Passenger’s information such as Name, Age, Pclass, etc. is provided in both train and test set</p></li>
+<li><p>The outcome (survival) indicates whether that passenger has survived or perished. This only presents in the training set.</p></li>
+<li><p>There are some missing value in both data set</p></li>
+</ul>
+<p>By using different machine learning algorithm, predictions can be made for people on the test dataset. In this project, I used a variaty of methods, some are just blackbox, some can be visualized fully or partially.</p>
+</div>
+<div id="load-library" class="section level1">
+<h1>Load library</h1>
+<pre class="r"><code>library(tidyverse)
+library(doParallel)
+library(caret)
+library(lubridate)
+library(patchwork)
+library(caretEnsemble)
+library(pROC)
+library(partykit)</code></pre>
+</div>
+<div id="load-data" class="section level1">
+<h1>Load data</h1>
+<pre class="r"><code>train0 &lt;- read_csv(&quot;./titanic/train.csv&quot;,
+                   col_types = cols(
+                     Survived = col_factor(ordered = FALSE, include_na = T),
+                     Pclass = col_factor(),
+                     Sex = col_factor(),
+                     Embarked = col_factor()
+                   ))
+intrain &lt;- dim(train0)[1]
+test0 &lt;- read_csv(&quot;./titanic/test.csv&quot;,
+                  col_types = cols(
+                    Pclass = col_factor(),
+                    Sex = col_factor(),
+                    Embarked = col_factor()
+                  ))</code></pre>
+</div>
+<div id="data-exploration" class="section level1">
+<h1>Data exploration</h1>
+<p>First glimpse at our data</p>
+<pre class="r"><code>glimpse(train0)</code></pre>
+<pre><code>## Observations: 891
+## Variables: 12
+## $ PassengerId &lt;dbl&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,...
+## $ Survived    &lt;fct&gt; 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0,...
+## $ Pclass      &lt;fct&gt; 3, 1, 3, 1, 3, 3, 1, 3, 3, 2, 3, 1, 3, 3, 3, 2, 3,...
+## $ Name        &lt;chr&gt; &quot;Braund, Mr. Owen Harris&quot;, &quot;Cumings, Mrs. John Bra...
+## $ Sex         &lt;fct&gt; male, female, female, female, male, male, male, ma...
+## $ Age         &lt;dbl&gt; 22, 38, 26, 35, 35, NA, 54, 2, 27, 14, 4, 58, 20, ...
+## $ SibSp       &lt;dbl&gt; 1, 1, 0, 1, 0, 0, 0, 3, 0, 1, 1, 0, 0, 1, 0, 0, 4,...
+## $ Parch       &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 1, 0, 0, 5, 0, 0, 1,...
+## $ Ticket      &lt;chr&gt; &quot;A/5 21171&quot;, &quot;PC 17599&quot;, &quot;STON/O2. 3101282&quot;, &quot;1138...
+## $ Fare        &lt;dbl&gt; 7.2500, 71.2833, 7.9250, 53.1000, 8.0500, 8.4583, ...
+## $ Cabin       &lt;chr&gt; NA, &quot;C85&quot;, NA, &quot;C123&quot;, NA, NA, &quot;E46&quot;, NA, NA, NA, ...
+## $ Embarked    &lt;fct&gt; S, C, S, S, S, Q, S, S, S, C, S, S, S, S, S, S, Q,...</code></pre>
+<p>We can see that:
+- PassengerID is just a sequence of number to distinguish passengers, hence it has no predictive power.</p>
+<ul>
+<li><p>Name follows a pattern with Familyname, Title and Firstname, it shows a potential to extract those components</p></li>
+<li><p>SibSp and Parch: aren’t those in the same family have the same familyname? Possibly have a relationship with family name</p></li>
+<li><p>Ticket does not follow any obvious pattern</p></li>
+<li><p>A lot of missing values in Cabin</p></li>
+</ul>
+<div id="dealing-with-na" class="section level2">
+<h2>Dealing with NA</h2>
+<p>How many NA values?</p>
+<ul>
+<li>in train set</li>
+</ul>
+<pre class="r"><code>train0 %&gt;% map_df(~sum(is.na(.)))</code></pre>
+<pre><code>## # A tibble: 1 x 12
+##   PassengerId Survived Pclass  Name   Sex   Age SibSp Parch Ticket  Fare
+##         &lt;int&gt;    &lt;int&gt;  &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;  &lt;int&gt; &lt;int&gt;
+## 1           0        0      0     0     0   177     0     0      0     0
+## # ... with 2 more variables: Cabin &lt;int&gt;, Embarked &lt;int&gt;</code></pre>
+<ul>
+<li>in test set</li>
+</ul>
+<pre class="r"><code>test0 %&gt;% map_df(~sum(is.na(.)))</code></pre>
+<pre><code>## # A tibble: 1 x 11
+##   PassengerId Pclass  Name   Sex   Age SibSp Parch Ticket  Fare Cabin
+##         &lt;int&gt;  &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt; &lt;int&gt;  &lt;int&gt; &lt;int&gt; &lt;int&gt;
+## 1           0      0     0     0    86     0     0      0     1   327
+## # ... with 1 more variable: Embarked &lt;int&gt;</code></pre>
+<p>Dealing with NA:</p>
+<ul>
+<li><p>Remove Cabin as there are too much NA</p></li>
+<li><p>Using median for Fare, only 1 value is missing</p></li>
+<li><p>Using the highest frequency value for Embarked</p></li>
+<li><p>The only predictor relating to Age is Name (Title e.g Mr, Miss, etc), so missing Age is replace by the mean of Age of people with the same title.</p></li>
+<li><p>Other methods like knnImpute or BagImpute or even some models which can handle NA values can be used to impute. However, those seems unnecessary complicated methods since they consider all other predictors to find NA values, We certainly know that only some predictors are directly relating predictors with missing NA.</p></li>
+</ul>
+</div>
+<div id="visualization" class="section level2">
+<h2>Visualization</h2>
+<div id="fare" class="section level3">
+<h3>Fare</h3>
+<pre class="r"><code>p1 &lt;- train0 %&gt;% ggplot() + geom_histogram(aes(Fare, fill = Survived)) + labs(title = &quot;Histogram of Fare \nin relation with Survived&quot;)
+p2&lt;- train0 %&gt;% ggplot() + geom_histogram(aes(Fare, fill = Survived), position = &quot;fill&quot;) + labs(title = &quot;Percentage of Fare \nin relation with Survived&quot;)
+p1 + p2</code></pre>
+<p><img src="/project/Titanic-R/index_files/figure-html/unnamed-chunk-7-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<p>Distibution of Fare is skewed to the right, transform it with log10 to normalize</p>
+<pre class="r"><code>p1 &lt;- train0 %&gt;% ggplot() + geom_histogram(aes(log10(Fare+1), fill = Survived)) + labs(title = &quot;Histogram of Fare \nin relation with Survived&quot;)
+p2&lt;- train0 %&gt;% ggplot() + geom_histogram(aes(log10(Fare+1), fill = Survived), position = &quot;fill&quot;) + labs(title = &quot;Percentage of Fare \nin relation with Survived&quot;)
+p1 + p2</code></pre>
+<p><img src="/project/Titanic-R/index_files/figure-html/unnamed-chunk-8-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<p>There is a patern in Fare in relation with Survived. More expensive ticket, higher chance to Survive (to an extend).</p>
+<p><br></p>
+<p>Good predictor</p>
+</div>
+<div id="pclass" class="section level3">
+<h3>Pclass</h3>
+<pre class="r"><code>train0 %&gt;% ggplot() + geom_bar(aes(fct_relevel(Pclass, &quot;1&quot;, &quot;2&quot;), fill = Survived)) + scale_x_discrete(name = &quot;Pclass&quot;)</code></pre>
+<p><img src="/project/Titanic-R/index_files/figure-html/unnamed-chunk-9-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<p>Pclass 1 &gt; Pclass 2 &gt; Pclass 3 in survival rate and there are much more people in Pclass 3 than Pclass 1 and 2.</p>
+<pre class="r"><code>train0 %&gt;% ggplot() + geom_boxplot(aes(fct_reorder(Pclass,Fare), Fare)) + scale_x_discrete(name = &quot;Pclass&quot;)</code></pre>
+<p><img src="/project/Titanic-R/index_files/figure-html/unnamed-chunk-10-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<p>The cost of Ticket increases from PClass 3 (cheapest) to Pclass 1 (most expensive).</p>
+<p><br></p>
+<p>This makes sense as the upper class who stayed in Pclass 1 would have more money hence have better chance to survive.</p>
+<p><br></p>
+<p>Good predictor</p>
+</div>
+<div id="sex" class="section level3">
+<h3>Sex</h3>
+<pre class="r"><code>train0 %&gt;% ggplot() + geom_bar(aes(Sex, fill = Survived))</code></pre>
+<p><img src="/project/Titanic-R/index_files/figure-html/unnamed-chunk-11-1.png" width="1152" style="display: block; margin: auto;" /></p>
+<p>Female have better survival rate as women and children are usually being rescued first.</p>
+<p><br></p>
+<p>Good predictor</p>
+</div>
+</div>
+</div>
+<div id="data-transformation" class="section level1">
+<h1>Data transformation</h1>
+<div id="combine-test-and-train-for-feature-selection" class="section level2">
+<h2>Combine test and train for feature selection</h2>
+<pre class="r"><code>combined &lt;- bind_rows(train0, test0)</code></pre>
+</div>
+<div id="recode-survive-for-caret-train-as-1-and-0-are-not-valid-level-name-in-r" class="section level2">
+<h2>Recode survive for caret train as 1 and 0 are not valid level name in R</h2>
+<pre class="r"><code>combined$Survived &lt;- fct_recode(combined$Survived, &quot;Lived&quot; = &quot;1&quot;, &quot;Died&quot; = &quot;0&quot;) %&gt;%
+  fct_relevel(&quot;Lived&quot;)</code></pre>
+</div>
+<div id="extract-title" class="section level2">
+<h2>Extract Title</h2>
+<pre class="r"><code>combined &lt;- combined %&gt;% mutate(Title = str_extract(Name, &quot;, (\\w)+&quot;)) %&gt;%
+  mutate(Title = str_extract(Title, &quot;\\w+&quot;))</code></pre>
+</div>
+<div id="remove-those-title-different-from-miss-master-mr-and-mrs-since-they-are-low-frequency" class="section level2">
+<h2>Remove those title different from Miss, Master, Mr and Mrs since they are low frequency</h2>
+<pre class="r"><code>combined %&gt;% ggplot() + geom_bar(aes(Title))</code></pre>
+<p><img src="/project/Titanic-R/index_files/figure-html/unnamed-chunk-15-1.png" width="1152" /></p>
+<p>Then combine them into Others</p>
+<pre class="r"><code>combined &lt;- combined %&gt;%
+  mutate(Title = ifelse(Title %in% c(&quot;Miss&quot;, &quot;Master&quot;, &quot;Mr&quot;, &quot;Mrs&quot;), Title,&quot;Others&quot;))</code></pre>
+<p>How this Title predictor look</p>
+<pre class="r"><code>combined[1:intrain,] %&gt;% ggplot() + geom_bar(aes(Title, fill = fct_relevel(Survived, &quot;Died&quot;))) + labs(fill = &quot;Survived&quot;)</code></pre>
+<p><img src="/project/Titanic-R/index_files/figure-html/unnamed-chunk-17-1.png" width="1152" style="display: block; margin: auto;" />
+Good predictor.
+<br>
+In combination with Pclass, we can see a more detail picture.</p>
+<pre class="r"><code>combined[1:intrain,] %&gt;%
+    group_by(Title, Pclass, Survived) %&gt;%
+    summarise(each = n()) %&gt;% ungroup() %&gt;% group_by(Title, Pclass) %&gt;% mutate(Tot = sum(each)) %&gt;%
+  mutate(Survivalrate = each/Tot) %&gt;%
+  ungroup() %&gt;% filter(Survived == &quot;Lived&quot;) %&gt;%
+  ggplot() + geom_tile(aes(fct_relevel(Pclass,&quot;1&quot;,&quot;2&quot;), fct_relevel(Title,&quot;Master&quot;, &quot;Miss&quot;, &quot;Mrs&quot;, &quot;Mr&quot;), fill = Survivalrate)) + scale_fill_viridis_c() + xlab(&quot;Pclass&quot;) + ylab(&quot;Title&quot;)</code></pre>
+<p><img src="/project/Titanic-R/index_files/figure-html/unnamed-chunk-18-1.png" width="1152" style="display: block; margin: auto;" /></p>
+</div>
+<div id="make-missingage-predictor-before-we-impute-age" class="section level2">
+<h2>Make Missingage predictor before we impute Age</h2>
+<pre class="r"><code>combined &lt;- combined %&gt;% mutate(MissingAge = is.na(Age))</code></pre>
+</div>
+<div id="use-title-to-predict-age" class="section level2">
+<h2>Use Title to predict Age</h2>
+<p>Master are underage male children(Fact).
+Take mean Age from train set and use it to replace NA from all data with Master title</p>
+<pre class="r"><code>meanMasterAge &lt;- combined %&gt;%
+  slice(1:dim(train0)[1]) %&gt;%
+  filter(Title == &quot;Master&quot;) %&gt;%
+  summarise(mean(Age, na.rm = T)) %&gt;%
+  pull()
+combined &lt;- combined %&gt;%
+  mutate(Age = ifelse(Title == &quot;Master&quot; &amp; is.na(Age), meanMasterAge ,Age ))</code></pre>
+<p>Impute Age based on other Title</p>
+<pre class="r"><code>combined[is.na(combined$Age) &amp; combined$Title == &quot;Mr&quot;,]$Age &lt;- mean(combined[1:intrain,][combined[1:intrain,]$Title == &quot;Mr&quot;,]$Age, na.rm = T)
+combined[is.na(combined$Age) &amp; combined$Title == &quot;Miss&quot;,]$Age &lt;- mean(combined[1:intrain,][combined[1:intrain,]$Title == &quot;Miss&quot;,]$Age, na.rm = T)
+combined[is.na(combined$Age) &amp; combined$Title == &quot;Mrs&quot;,]$Age &lt;- mean(combined[1:intrain,][combined[1:intrain,]$Title == &quot;Mrs&quot;,]$Age, na.rm = T)
+combined[is.na(combined$Age) &amp; combined$Title == &quot;Others&quot;,]$Age &lt;- mean(combined[1:intrain,][combined[1:intrain,]$Title == &quot;Others&quot;,]$Age, na.rm = T)</code></pre>
+</div>
+<div id="impute-embarked-by-median" class="section level2">
+<h2>Impute Embarked by median</h2>
+<pre class="r"><code>combined[is.na(combined$Embarked),]$Embarked &lt;- &quot;S&quot;</code></pre>
+</div>
+<div id="impute-fare-by-mean" class="section level2">
+<h2>Impute Fare by mean</h2>
+<pre class="r"><code>combined[is.na(combined$Fare),]$Fare &lt;- mean(combined[1:intrain,][combined[1:intrain,]$Pclass == 3,]$Fare, na.rm = T)</code></pre>
+</div>
+<div id="family-name" class="section level2">
+<h2>Family name</h2>
+<pre class="r"><code>combined &lt;- combined %&gt;% mutate(Familyname = str_extract(Name, &quot;^.+,&quot;)) %&gt;%
+  mutate(Familyname = str_sub(Familyname,1, -2))</code></pre>
+</div>
+<div id="transform-fare-to-logfare" class="section level2">
+<h2>Transform Fare to log(Fare)</h2>
+<pre class="r"><code>combined &lt;- combined %&gt;% mutate(Fare = log10(Fare +1))</code></pre>
+</div>
+<div id="make-groupsize-predictor" class="section level2">
+<h2>Make groupsize predictor</h2>
+<p>A. There are people with same Ticket but different Family name
+B. There are people with same Familyname but different Ticket
+C. There are people with same Familyname and same Ticket</p>
+<p>The groupsize of a person is determined by number of other people with same ticket and family name. (A + B - C)</p>
+<pre class="r"><code>combined &lt;- combined %&gt;% group_by(Ticket, Familyname) %&gt;% mutate(nAll = n()) %&gt;%
+  ungroup() %&gt;% group_by(Ticket) %&gt;% mutate(nTicket = n()) %&gt;%
+  ungroup() %&gt;% group_by(Familyname) %&gt;% mutate(nFamilyname = n()) %&gt;%
+  ungroup() %&gt;% mutate(Groupsize = nTicket + nFamilyname - nAll)
+
+combined &lt;- combined %&gt;% select(-nTicket, -nFamilyname)</code></pre>
+<p>How this new groupsize predictor look</p>
+<pre class="r"><code>combined[1:intrain,] %&gt;%
+  ggplot() + geom_bar(aes(Groupsize, fill = fct_relevel(Survived, &quot;Died&quot;)), position = &quot;fill&quot;)</code></pre>
+<p><img src="/project/Titanic-R/index_files/figure-html/unnamed-chunk-27-1.png" width="1152" /></p>
+<pre class="r"><code>combined[1:intrain,] %&gt;%
+    group_by(Pclass,Groupsize, Title, Survived) %&gt;%
+    summarise(each = n()) %&gt;% ungroup() %&gt;% group_by(Pclass, Groupsize, Title) %&gt;% mutate(Tot = sum(each)) %&gt;%
+  mutate(Survivalrate = each/Tot) %&gt;%
+  ungroup() %&gt;% filter(Survived == &quot;Lived&quot;) %&gt;%
+  ggplot() + geom_tile(aes(fct_relevel(Title, &quot;Master&quot;, &quot;Miss&quot;, &quot;Mrs&quot;), Groupsize, fill = Survivalrate)) + scale_fill_viridis_c() + xlab(&quot;Title&quot;) + ylab(&quot;Groupsize&quot;) + facet_wrap(.~fct_relevel(Pclass, &quot;1&quot;, &quot;2&quot;))</code></pre>
+<p><img src="/project/Titanic-R/index_files/figure-html/unnamed-chunk-27-2.png" width="1152" />
+Some pattern but not really clear.</p>
+</div>
+<div id="final-look" class="section level2">
+<h2>Final look</h2>
+<pre class="r"><code>glimpse(combined)</code></pre>
+<pre><code>## Observations: 1,309
+## Variables: 17
+## $ PassengerId &lt;dbl&gt; 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,...
+## $ Survived    &lt;fct&gt; Died, Lived, Lived, Lived, Died, Died, Died, Died,...
+## $ Pclass      &lt;fct&gt; 3, 1, 3, 1, 3, 3, 1, 3, 3, 2, 3, 1, 3, 3, 3, 2, 3,...
+## $ Name        &lt;chr&gt; &quot;Braund, Mr. Owen Harris&quot;, &quot;Cumings, Mrs. John Bra...
+## $ Sex         &lt;fct&gt; male, female, female, female, male, male, male, ma...
+## $ Age         &lt;dbl&gt; 22.00000, 38.00000, 26.00000, 35.00000, 35.00000, ...
+## $ SibSp       &lt;dbl&gt; 1, 1, 0, 1, 0, 0, 0, 3, 0, 1, 1, 0, 0, 1, 0, 0, 4,...
+## $ Parch       &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 1, 2, 0, 1, 0, 0, 5, 0, 0, 1,...
+## $ Ticket      &lt;chr&gt; &quot;A/5 21171&quot;, &quot;PC 17599&quot;, &quot;STON/O2. 3101282&quot;, &quot;1138...
+## $ Fare        &lt;dbl&gt; 0.9164539, 1.8590380, 0.9506082, 1.7331973, 0.9566...
+## $ Cabin       &lt;chr&gt; NA, &quot;C85&quot;, NA, &quot;C123&quot;, NA, NA, &quot;E46&quot;, NA, NA, NA, ...
+## $ Embarked    &lt;fct&gt; S, C, S, S, S, Q, S, S, S, C, S, S, S, S, S, S, Q,...
+## $ Title       &lt;chr&gt; &quot;Mr&quot;, &quot;Mrs&quot;, &quot;Miss&quot;, &quot;Mrs&quot;, &quot;Mr&quot;, &quot;Mr&quot;, &quot;Mr&quot;, &quot;Mas...
+## $ MissingAge  &lt;lgl&gt; FALSE, FALSE, FALSE, FALSE, FALSE, TRUE, FALSE, FA...
+## $ Familyname  &lt;chr&gt; &quot;Braund&quot;, &quot;Cumings&quot;, &quot;Heikkinen&quot;, &quot;Futrelle&quot;, &quot;All...
+## $ nAll        &lt;int&gt; 1, 2, 1, 2, 1, 1, 1, 5, 3, 2, 3, 1, 1, 7, 1, 1, 6,...
+## $ Groupsize   &lt;int&gt; 2, 2, 1, 2, 2, 3, 3, 5, 6, 2, 3, 2, 1, 11, 1, 1, 6...</code></pre>
+</div>
+</div>
+<div id="training" class="section level1">
+<h1>Training</h1>
+<div id="separate-train-and-test-set-since-we-are-done-with-data-transformation" class="section level2">
+<h2>Separate train and test set since we are done with Data transformation</h2>
+<p>Separate 20% of the train set into holdout set to evaluate the models, it is more convenient than using using upload test set to Kaggle everytime.</p>
+<pre class="r"><code>set.seed(12345)
+notinholdout &lt;- createDataPartition(train0$Survived, p = 0.8, list = F)
+
+alltrain &lt;- combined[1:intrain, ]
+
+train &lt;- combined[1:intrain, ] %&gt;% slice(notinholdout)
+holdout &lt;- combined[1:intrain, ] %&gt;% slice(-notinholdout)
+
+test &lt;- combined[-(1:intrain), ]</code></pre>
+</div>
+<div id="validation-folds" class="section level2">
+<h2>Validation folds</h2>
+<p>5 times repeated 10 folds is used to evaluate model’s parameters. It is usually specified inside the trainControl but separate this step is a requirement for caretEnsemble to make sure all folds are consistent for ensemble.</p>
+<pre class="r"><code>index &lt;- createMultiFolds(train$Survived, k = 10, times = 5)</code></pre>
+</div>
+<div id="traincontrol" class="section level2">
+<h2>Traincontrol</h2>
+<p>The index will take over other parameters, supply them just to get the labels right. We will use the metric ROC for this, so twoClassSummary and classProbs must be specified</p>
+<pre class="r"><code>trCtr_grid &lt;- trainControl(method = &quot;repeatedcv&quot;, repeats = 5,
+                           number = 5,
+                           index = index, savePredictions = &quot;final&quot;, summaryFunction = twoClassSummary,
+                           search = &quot;grid&quot;, # By default  
+                           verboseIter=TRUE, classProbs = T)
+
+trCtr_none &lt;- trainControl(method = &quot;none&quot;, classProbs = T)</code></pre>
+<p>=
+## Setup parallel computing</p>
+<pre class="r"><code>cl &lt;- makeCluster(7)
+registerDoParallel(cl)</code></pre>
+</div>
+<div id="get-model-info-if-needed" class="section level2">
+<h2>Get model info if needed</h2>
+<pre class="r"><code>getModelInfo()$xgbTree$parameters</code></pre>
+<pre><code>##          parameter   class                          label
+## 1          nrounds numeric          # Boosting Iterations
+## 2        max_depth numeric                 Max Tree Depth
+## 3              eta numeric                      Shrinkage
+## 4            gamma numeric         Minimum Loss Reduction
+## 5 colsample_bytree numeric     Subsample Ratio of Columns
+## 6 min_child_weight numeric Minimum Sum of Instance Weight
+## 7        subsample numeric           Subsample Percentage</code></pre>
+</div>
+<div id="choose-hyperparameters" class="section level2">
+<h2>Choose Hyperparameters</h2>
+<pre class="r"><code>C5.0grid &lt;- expand.grid(.trials = c(1:9, (1:10)*10),
+                       .model = c(&quot;tree&quot;, &quot;rules&quot;),
+                       .winnow = c(TRUE, FALSE))
+
+SVMgrid &lt;- expand.grid(sigma = c(0, 0.01, 0.04, 0.2),
+                       C= c(seq(0,1,0.2),10,500))
+
+XGBgrid &lt;- expand.grid(nrounds = 100, # Fixed. depend on datasize
+                       max_depth = 6, # More will make model more complex and more likely to overfit. Choose only this due to computational barrier
+                       eta = c(0.01,0.05, 0.1), # NEED FINE TUNE
+                       gamma = 0, # it is usually OK to leave at 0
+                       min_child_weight = c(1,2,3), # The higher value, the more conservative model is, NEED FINE TUNE
+                       colsample_bytree = c(.4, .7, 1), # subsample by columns
+                       subsample = 1) # subsample by row leave at 1 since we doing k-fold
+
+rpartgrid &lt;- expand.grid(cp = runif(30,0,0.5))
+
+rfgrid &lt;- expand.grid(mtry = 1:8)</code></pre>
+</div>
+<div id="train-models" class="section level2">
+<h2>Train models</h2>
+<p>Choose predictors</p>
+<pre class="r"><code>formula &lt;- as.formula(Survived ~ Pclass + Sex + Title +
+                        Age + MissingAge + SibSp + Parch + Groupsize +
+                        Fare + Embarked)</code></pre>
+<p>We will use caret ensemble for easy training</p>
+<pre class="r"><code>set.seed(67659)
+
+modelList &lt;- caretList(
+  formula, data = train,
+  trControl=trCtr_grid,
+  metric = &quot;ROC&quot;,
+  tuneList=list(
+    rf=caretModelSpec(method=&quot;rf&quot;, tuneGrid= rfgrid),
+    SVM=caretModelSpec(method=&quot;svmRadial&quot;, tuneGrid = SVMgrid,
+                       preProcess = c(&quot;scale&quot;, &quot;center&quot;)),
+    xgb=caretModelSpec(method=&quot;xgbTree&quot;, tuneGrid = XGBgrid),
+    rpart= caretModelSpec(method = &quot;rpart&quot;, tuneGrid = rpartgrid),
+    C5.0 = caretModelSpec(method = &quot;C5.0&quot;, tuneGrid = C5.0grid)
+    )
+)</code></pre>
+<pre><code>## Aggregating results
+## Selecting tuning parameters
+## Fitting mtry = 6 on full training set</code></pre>
+<pre><code>## Warning in nominalTrainWorkflow(x = x, y = y, wts = weights, info =
+## trainInfo, : There were missing values in resampled performance measures.</code></pre>
+<pre><code>## Aggregating results
+## Selecting tuning parameters
+## Fitting sigma = 0.2, C = 0.4 on full training set
+## Aggregating results
+## Selecting tuning parameters
+## Fitting nrounds = 100, max_depth = 6, eta = 0.05, gamma = 0, colsample_bytree = 0.4, min_child_weight = 2, subsample = 1 on full training set
+## Aggregating results
+## Selecting tuning parameters
+## Fitting cp = 0.0228 on full training set
+## Aggregating results
+## Selecting tuning parameters
+## Fitting trials = 100, model = rules, winnow = FALSE on full training set</code></pre>
+</div>
+</div>
+<div id="evaluation" class="section level1">
+<h1>Evaluation</h1>
+<div id="evaluate-in-train-data" class="section level2">
+<h2>Evaluate in train data</h2>
+<pre class="r"><code>dotplot(resamples(modelList))</code></pre>
+<p><img src="/project/Titanic-R/index_files/figure-html/unnamed-chunk-37-1.png" width="1152" /></p>
+<ul>
+<li>rpart seems to be the worst model.</li>
+</ul>
+<p>Let’s see if there is any significant different between them</p>
+<pre class="r"><code>diff(resamples(modelList), metric = &quot;ROC&quot;) %&gt;% summary()</code></pre>
+<pre><code>## 
+## Call:
+## summary.diff.resamples(object = .)
+## 
+## p-value adjustment: bonferroni 
+## Upper diagonal: estimates of the difference
+## Lower diagonal: p-value for H0: difference = 0
+## 
+## ROC 
+##       rf        SVM       xgb       rpart     C5.0     
+## rf               0.019479 -0.007292  0.073719 -0.002654
+## SVM   8.044e-05           -0.026771  0.054240 -0.022133
+## xgb   0.01167   6.282e-07            0.081011  0.004639
+## rpart &lt; 2.2e-16 2.825e-11 &lt; 2.2e-16           -0.076373
+## C5.0  1.00000   4.563e-05 1.00000   &lt; 2.2e-16</code></pre>
+<ul>
+<li>from here we can see that rpart and SVM are actually worse than the rest of models.</li>
+</ul>
+<p>Any correlation between models</p>
+<pre class="r"><code>modelCor(resamples(modelList))</code></pre>
+<pre><code>##              rf       SVM       xgb     rpart      C5.0
+## rf    1.0000000 0.8413727 0.9532823 0.7763147 0.9494574
+## SVM   0.8413727 1.0000000 0.8049344 0.6800322 0.8247340
+## xgb   0.9532823 0.8049344 1.0000000 0.7609024 0.9228143
+## rpart 0.7763147 0.6800322 0.7609024 1.0000000 0.7549545
+## C5.0  0.9494574 0.8247340 0.9228143 0.7549545 1.0000000</code></pre>
+<ul>
+<li>all model are all correlated, which might not results in any improvement when trying to ensemble models. This is not unexpected as those model are quite strong. So we will not use any ensemble for now.</li>
+</ul>
+<p>Let’s have a look at Importance of predictors in tree-based model</p>
+<pre class="r"><code>ggplot(varImp(modelList$rf)) + labs(title = &quot;Random Forest&quot;) +
+ggplot(varImp(modelList$C5.0)) + labs(title = &quot;C5.0&quot;) +
+ggplot(varImp(modelList$xgb)) + labs(title = &quot;XGB&quot;) +
+ggplot(varImp(modelList$rpart)) + labs(title = &quot;rpart&quot;)</code></pre>
+<p><img src="/project/Titanic-R/index_files/figure-html/unnamed-chunk-40-1.png" width="1152" /></p>
+<p>MissingAge predictors does not seem to do well across most models, in contrast, Groupsize perform really well.</p>
+<p><br></p>
+<p>Let’s visualize a tree in rpart model</p>
+<pre class="r"><code>plot(as.party(modelList$rpart$finalModel))</code></pre>
+<p><img src="/project/Titanic-R/index_files/figure-html/unnamed-chunk-41-1.png" width="1152" /></p>
+<p>What a simple tree that can achieve almost 80% accuracy on unseen data (next part)</p>
+</div>
+<div id="evaluate-in-holdout-data" class="section level2">
+<h2>Evaluate in holdout data</h2>
+<p>Accuracy check:</p>
+<pre class="r"><code>map(modelList, ~predict(., newdata = holdout)) %&gt;%
+  map( ~ confusionMatrix(holdout$Survived, .)) %&gt;%
+  map_df(~.$overall[&quot;Accuracy&quot;])</code></pre>
+<pre><code>## # A tibble: 1 x 5
+##      rf   SVM   xgb rpart  C5.0
+##   &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;
+## 1 0.808 0.825 0.819 0.797 0.825</code></pre>
+<p>ROC and AUC</p>
+<pre class="r"><code>modROC &lt;- map(modelList, ~predict(. , newdata = holdout, type = &quot;prob&quot;)) %&gt;%
+  map(~roc(predictor = .x$Lived,
+           response = holdout$Survived,
+           levels = rev(levels(holdout$Survived)),
+           print.auc = TRUE)
+)
+
+aucROC &lt;- modROC %&gt;% map_df(~.$auc) %&gt;% gather(key = &quot;model&quot;, value = &quot;ROC&quot;) %&gt;%
+  arrange(desc(ROC)) %&gt;%
+  mutate(ROC = round(ROC, digits = 3)) %&gt;% unite(&quot;auc&quot;, model, ROC, sep = &quot;&#39;s AUC: &quot;) %&gt;%
+  pull() %&gt;% str_c(collapse = &quot;\n&quot;)
+
+ggroc(modROC) + geom_text(aes(x = 0.5, y = 0.5, label = aucROC), color = &quot;black&quot;) + scale_color_discrete(name = &quot;Model&quot;)</code></pre>
+<p><img src="/project/Titanic-R/index_files/figure-html/unnamed-chunk-43-1.png" width="1152" /></p>
+<p>Ranking on best performance:</p>
+<ol style="list-style-type: decimal">
+<li><p>C5.0</p></li>
+<li><p>Random Forest</p></li>
+<li>Extreme gradient boosting</li>
+<li><p>Supportive vector machines</p></li>
+<li><p>Decision tree</p></li>
+</ol>
+</div>
+<div id="evaluate-on-test-data" class="section level2">
+<h2>Evaluate on test data</h2>
+<p>Extract best tunes from models then train them again using all training data with no resampling method. After that, predict data on test data and print csv out to put on kaggle</p>
+<pre class="r"><code>set.seed(6759)
+
+rf_f &lt;- train(formula, data = alltrain, trControl = trCtr_none, method = &quot;rf&quot;,
+              tuneGrid = modelList$rf$bestTune)
+
+SVM_f &lt;- train(formula, data = alltrain, trControl = trCtr_none, method = &quot;svmRadial&quot;,
+               tuneGrid = modelList$SVM$bestTune, preProcess = c(&quot;scale&quot;, &quot;center&quot;))
+
+xgb_f &lt;- train(formula, data = alltrain, trControl = trCtr_none, method = &quot;xgbTree&quot;,
+               tuneGrid = modelList$xgb$bestTune)
+
+rpart_f &lt;- train(formula, data = alltrain, trControl = trCtr_none, method = &quot;rpart&quot;,
+                 tuneGrid = modelList$rpart$bestTune)
+
+C5.0_f &lt;- train(formula, data = alltrain, trControl = trCtr_none, method = &quot;C5.0&quot;,
+                tuneGrid = modelList$C5.0$bestTune)
+
+all &lt;- list(rf = rf_f, SVM = SVM_f, xgb = xgb_f, rpart = rpart_f, C5.0 = C5.0_f)
+
+finaltest &lt;- predict(all, newdata = test, na.action = na.pass)
+
+prefix &lt;- &quot;all_ROC&quot;
+
+for (i in names(finaltest)){
+  bind_cols(PassengerID = test0$PassengerId, Survived = finaltest[[i]]) %&gt;%
+    mutate(Survived = fct_recode(Survived, &quot;1&quot; = &quot;Lived&quot;, &quot;0&quot; = &quot;Died&quot;)) %&gt;%
+    write_csv(str_c(&quot;./prediction/&quot;, prefix,&quot;_&quot; ,i,&quot;_&quot;, today(), &quot;.csv&quot;))
+}</code></pre>
+<p>Results are</p>
+<ul>
+<li><p>Extreme Gradient Boosting at 0.77990</p></li>
+<li><p>Supportive Vector Machines at 0.78947</p></li>
+<li><p>Random Forest at 0.76555</p></li>
+<li><p>C5.0 at 0.78468</p></li>
+<li><p>Single Decision tree at 0.77511</p></li>
+</ul>
+</div>
+</div>
+<div id="using-other-set-of-predictors" class="section level1">
+<h1>Using other set of predictors</h1>
+<p>Let’s see if we can improve the results from test set by using other set of predictors on to train on all data available</p>
+<pre class="r"><code>formula1 &lt;- as.formula(Survived ~ Pclass + Sex + Title +
+                        Groupsize +
+                        Fare + Embarked)
+
+
+set.seed(67659)
+
+modelList1 &lt;- caretList(
+  formula1, data = alltrain,
+  trControl=trCtr_grid,
+  metric = &quot;ROC&quot;,
+  tuneList=list(
+    rf=caretModelSpec(method=&quot;rf&quot;, tuneGrid= rfgrid),
+    SVM=caretModelSpec(method=&quot;svmRadial&quot;, tuneGrid = SVMgrid,
+                       preProcess = c(&quot;scale&quot;, &quot;center&quot;)),
+    xgb=caretModelSpec(method=&quot;xgbTree&quot;, tuneGrid = XGBgrid),
+    rpart= caretModelSpec(method = &quot;rpart&quot;, tuneGrid = rpartgrid),
+    C5.0 = caretModelSpec(method = &quot;C5.0&quot;, tuneGrid = C5.0grid)
+    )
+)
+
+finaltest &lt;- modelList1 %&gt;% map(~ predict(., newdata = test, na.action = na.pass))
+
+prefix &lt;- &quot;all_ROC_1&quot;
+
+for (i in names(finaltest)){
+  bind_cols(PassengerID = test0$PassengerId, Survived = finaltest[[i]]) %&gt;%
+    mutate(Survived = fct_recode(Survived, &quot;1&quot; = &quot;Lived&quot;, &quot;0&quot; = &quot;Died&quot;)) %&gt;%
+    write_csv(str_c(&quot;./prediction/&quot;, prefix,&quot;_&quot; ,i,&quot;_&quot;, today(), &quot;.csv&quot;))
+}</code></pre>
+<p>Results are:</p>
+<ul>
+<li><p>Extreme Gradient Boosting: 0.77511</p></li>
+<li><p>Supportive vector machine: 0.79904</p></li>
+<li><p>Random Forest: 0.80382</p></li>
+<li><p>C5.0: 0.77511</p></li>
+<li><p>Single decision tree: 0.77511</p></li>
+</ul>
+<p>We can see a significant increase in accuracy using Random Forest with less predictors hence less overfitting. A slight improvement can be observed in other models except for C5.0</p>
+</div>
+<div id="using-other-set-of-predictors-1" class="section level1">
+<h1>Using other set of predictors</h1>
+<pre class="r"><code>formula2 &lt;- as.formula(Survived ~ Pclass + Title +
+                         Groupsize +
+                        Fare + Embarked)
+
+set.seed(67659)
+modelList2 &lt;- caretList(
+  formula2, data = alltrain,
+  trControl=trCtr_grid,
+  metric = &quot;ROC&quot;,
+  tuneList=list(
+    rf=caretModelSpec(method=&quot;rf&quot;, tuneGrid= rfgrid),
+    SVM=caretModelSpec(method=&quot;svmRadial&quot;, tuneGrid = SVMgrid,
+                       preProcess = c(&quot;scale&quot;, &quot;center&quot;)),
+    xgb=caretModelSpec(method=&quot;xgbTree&quot;, tuneGrid = XGBgrid),
+    rpart= caretModelSpec(method = &quot;rpart&quot;, tuneGrid = rpartgrid),
+    C5.0 = caretModelSpec(method = &quot;C5.0&quot;, tuneGrid = C5.0grid)
+    )
+)
+
+finaltest &lt;- modelList2 %&gt;% map(~ predict(., newdata = test, na.action = na.pass))
+
+prefix &lt;- &quot;all_ROC_2&quot;
+
+for (i in names(finaltest)){
+  bind_cols(PassengerID = test0$PassengerId, Survived = finaltest[[i]]) %&gt;%
+    mutate(Survived = fct_recode(Survived, &quot;1&quot; = &quot;Lived&quot;, &quot;0&quot; = &quot;Died&quot;)) %&gt;%
+    write_csv(str_c(&quot;./prediction/&quot;, prefix,&quot;_&quot; ,i,&quot;_&quot;, today(), &quot;.csv&quot;))
+}</code></pre>
+<p>Results are:</p>
+<ul>
+<li><p>Extreme Gradient Boosting: 0.78468</p></li>
+<li><p>Supportive vector machine: 0.80382</p></li>
+<li><p>Random Forest: 0.80382</p></li>
+<li><p>C5.0: 0.78468</p></li>
+<li><p>Single decision tree: 0.77511</p></li>
+</ul>
+</div>
+<div id="using-another-set-of-predictions" class="section level1">
+<h1>Using another set of predictions</h1>
+<pre class="r"><code>formula3 &lt;- as.formula(Survived ~ Pclass +
+                        Groupsize + Age + Sex +
+                        Fare + Embarked)
+
+
+set.seed(67659)
+
+modelList3 &lt;- caretList(
+  formula3,
+  data = alltrain,
+  trControl=trCtr_grid,
+  metric = &quot;ROC&quot;,
+  tuneList=list(
+    rf=caretModelSpec(method=&quot;rf&quot;, tuneGrid= rfgrid),
+    SVM=caretModelSpec(method=&quot;svmRadial&quot;, tuneGrid = SVMgrid,
+                       preProcess = c(&quot;scale&quot;, &quot;center&quot;)),
+    xgb=caretModelSpec(method=&quot;xgbTree&quot;, tuneGrid = XGBgrid),
+    rpart= caretModelSpec(method = &quot;rpart&quot;, tuneGrid = rpartgrid),
+    C5.0 = caretModelSpec(method = &quot;C5.0&quot;, tuneGrid = C5.0grid)
+    )
+)
+
+finaltest &lt;- modelList3 %&gt;% map(~ predict(., newdata = test, na.action = na.pass))
+
+prefix &lt;- &quot;all_ROC_3&quot;
+
+for (i in names(finaltest)){
+  bind_cols(PassengerID = test0$PassengerId, Survived = finaltest[[i]]) %&gt;%
+    mutate(Survived = fct_recode(Survived, &quot;1&quot; = &quot;Lived&quot;, &quot;0&quot; = &quot;Died&quot;)) %&gt;%
+    write_csv(str_c(&quot;./prediction/&quot;, prefix,&quot;_&quot; ,i,&quot;_&quot;, today(), &quot;.csv&quot;))
+}</code></pre>
+<p>Results are:</p>
+<ul>
+<li><p>Extreme Gradient Boosting: 0.77033</p></li>
+<li><p>Supportive vector machine: 0.78468</p></li>
+<li><p>Random Forest: 0.79904</p></li>
+<li><p>C5.0: 0.76076</p></li>
+<li><p>Single decision tree: 0.77511</p></li>
+</ul>
+</div>
+<div id="make-other-predictor" class="section level1">
+<h1>Make other predictor</h1>
+<pre class="r"><code>alltrain &lt;- alltrain %&gt;% mutate(Title = ifelse(Age &lt; 15, &quot;Kid&quot;, Title))
+test &lt;- test %&gt;% mutate(Title = ifelse(Age &lt; 15, &quot;Kid&quot;, Title))
+
+formula4 &lt;- as.formula(Survived ~ Pclass + Title +
+                         Groupsize +
+                        Fare + Embarked)
+
+set.seed(67659)
+modelList4 &lt;- caretList(
+  formula4, data = alltrain,
+  trControl=trCtr_grid,
+  metric = &quot;ROC&quot;,
+  tuneList=list(
+    rf=caretModelSpec(method=&quot;rf&quot;, tuneGrid= rfgrid),
+    SVM=caretModelSpec(method=&quot;svmRadial&quot;, tuneGrid = SVMgrid,
+                       preProcess = c(&quot;scale&quot;, &quot;center&quot;)),
+    xgb=caretModelSpec(method=&quot;xgbTree&quot;, tuneGrid = XGBgrid),
+    rpart= caretModelSpec(method = &quot;rpart&quot;, tuneGrid = rpartgrid),
+    C5.0 = caretModelSpec(method = &quot;C5.0&quot;, tuneGrid = C5.0grid)
+    )
+)
+
+finaltest &lt;- modelList4 %&gt;% map(~ predict(., newdata = test, na.action = na.pass))
+
+prefix &lt;- &quot;all_ROC_4&quot;
+
+for (i in names(finaltest)){
+  bind_cols(PassengerID = test0$PassengerId, Survived = finaltest[[i]]) %&gt;%
+    mutate(Survived = fct_recode(Survived, &quot;1&quot; = &quot;Lived&quot;, &quot;0&quot; = &quot;Died&quot;)) %&gt;%
+    write_csv(str_c(&quot;./prediction/&quot;, prefix,&quot;_&quot; ,i,&quot;_&quot;, today(), &quot;.csv&quot;))
+}</code></pre>
+<p>Results are:</p>
+<ul>
+<li><p>Extreme Gradient Boosting: 0.79425</p></li>
+<li><p>Supportive vector machine: 0.78947</p></li>
+<li><p>Random Forest: 0.78947</p></li>
+<li><p>C5.0: 0.80382</p></li>
+<li><p>Single decision tree: 0.77511</p></li>
+</ul>
+</div>
+<div id="summary" class="section level1">
+<h1>Summary</h1>
+<p>We can see easily that women and children were the priority of rescue. First class has higher chance of surviving compare to other classes.</p>
+<p>I used a lot of machine learning algorithms for this project, I believe that XGBoost can be fine tuned more to obtain better result. <br> The highest result gave me top 9% on Kaggle. However, I think that using complicated blackbox machine learning should be accompanied by other simpler algorithm which allows easy understanding for human.</p>
+</div>
