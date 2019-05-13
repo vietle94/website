@@ -37,8 +37,8 @@ align = "center"  # Choose `center`, `left`, or `right`.
   content = "<br>"
   align = "center"
 
-  overlay_color = "#555"  # An HTML color value.
-  overlay_img = ""  # Image path relative to your `static/img/` folder.
+  overlay_color = "#111"  # An HTML color value.
+  overlay_img = "headers/keyboard-1385706_1280.jpg"  # Image path relative to your `static/img/` folder.
   overlay_filter = 0.5  # Darken the image. Value in range 0-1.
   cta_label = "Explore"
   cta_url = "#projects"
@@ -51,10 +51,10 @@ align = "center"  # Choose `center`, `left`, or `right`.
   align = "center"
 
   overlay_color = "#333"  # An HTML color value.
-  overlay_img = ""  # Image path relative to your `static/img/` folder.
+  overlay_img = "headers/mockup-863469_1920.jpg"  # Image path relative to your `static/img/` folder.
   overlay_filter = 0.5  # Darken the image. Value in range 0-1.
   cta_label = "Explore"
-  cta_url = "#projects"
+  cta_url = "#gallery"
   cta_icon_pack = "f06e"
   cta_icon = "eye"
 +++
