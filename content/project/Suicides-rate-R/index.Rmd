@@ -1,0 +1,362 @@
+---
+title: "Suicide rate"
+date: 2019-05-14T10-24-00
+output: 
+  md_document: default
+  html_document:
+    toc : TRUE
+---
+
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  fig.width=12, fig.height=8,
+  cache = T
+)
+```
+
+# Load library ------------------
+
+```{r, warning = F, message = F}
+library(tidyverse)
+library(skimr)
+library(maps)
+library(gganimate)
+```
+
+# Load data ------------------
+
+```{r}
+data <- read_csv("data/master.csv")
+data <- data %>% rename(HDI = `HDI for year`,
+                        suicides_rate = `suicides/100k pop`,
+                        gdp_yearly = `gdp_for_year ($)`,
+                        gdp_capita = `gdp_per_capita ($)`)
+```
+
+# Load extra data for worldmaps and statistics
+
+## For world map
+
+```{r}
+library(maps)
+
+world <- map_data("world")
+world[world$region == "Antigua" | world$region == "Barbuda",]$region <- "Antigua and Barbuda"
+world[world$region == "Cape Verde",]$region <- "Cabo Verde"
+world[world$region == "South Korea",]$region <- "Republic of Korea"
+world[world$region == "Russia",]$region <- "Russian Federation"
+world[world$region == "Saint Kitts" | world$region == "Nevis",]$region <- "Saint Kitts and Nevis"
+world[world$region == "Saint Vincent" | world$region == "Grenadines",]$region <- "Saint Vincent and Grenadines"
+world[world$region == "Trinidad" | world$region == "Tobago",]$region <- "Trinidad and Tobago"
+world[world$region == "UK",]$region <- "United Kingdom"
+world[world$region == "USA",]$region <- "United States"
+world[world$subregion == "Macao" & !is.na(world$subregion),]$region <- "Macau"
+
+worldmap <- ggplot(data = world, aes(long, lat, group = group)) + geom_polygon(fill = "#f2f2f2") +
+  theme(panel.background = element_blank(),
+                   axis.title = element_blank(),
+                   axis.line.x = element_blank(),
+                   axis.ticks = element_blank(),
+                   axis.text = element_blank()) +
+   coord_fixed(1.2)
+
+```
+
+## For statistics
+
+- Get area
+
+- Get continents
+
+- Get country codes
+
+Might not be a good idea 
+
+```{r}
+# library(wbstats)
+
+# wbcountries() %>% view()
+
+# Searching area indicator in the database
+# wbsearch(pattern = "area") 
+
+#wb <- wb(country = "all", indicator = "AG.SRF.TOTL.K2", startdate = 1985, enddate = 2016) %>% 
+ # rename(year = date) %>% 
+#  mutate(year = as.numeric(year))
+#temp <- left_join(countrystat, wb, by = c("country" = "country", "year" = "year"))
+
+#countries <- wbcountries()
+
+#temp %>% filter(is.na(iso3c)) %>% view()
+
+```
+
+
+# Data Exploratory ----------------------- 
+
+## Have a look
+
+```{r}
+summary(data)
+```
+
+- country-year column is just a concatenation of country and year column
+
+- suicides/100k pop is calculated by suicides / population * 100000
+
+- HDI is Human Development Report, seems missing alot, the only variable is missing
+
+- Age is divided into brackets
+
+## A closer look:
+
+```{r}
+
+skim_with(numeric = list(hist = NULL))
+skim(data) 
+
+```
+
+There are:
+
+- 6 Age brackets
+
+- 101 differenet countries in this data set
+
+- Year from 1985 to 2016. (32 years)
+
+- 2321 combinations of country-year (less than 32 * 101). Must be some implicit missing data with year and country
+
+- 6 different generations
+
+- 2 Sex
+
+## Extract country stats
+
+HDI, GDP per year and per capital are values based on country so it makes sense to extract those values into another 
+dataframe
+
+```{r}
+countrystat <- data %>% select(country, year, gdp_yearly, gdp_capita, HDI) %>% 
+  distinct()
+
+data <- data %>% select(-gdp_yearly, -gdp_capita, -HDI, -`country-year`)
+
+```
+
+
+## Review implicit missing data
+
+```{r}
+data <- data %>% complete(country, year, sex, age)
+```
+
+Pattern of missing data
+
+```{r}
+data %>% group_by(country, year) %>% 
+  summarise(miss = sum(is.na(suicides_no))) %>% 
+  ungroup() %>% count(miss)
+```
+
+
+So each country every year can either miss all data, have all data, but there are some country only miss 2 data, Let's review those
+
+```{r}
+data %>% filter(year == 2016) %>% right_join(data %>% group_by(country, year) %>% 
+  summarise(miss = sum(is.na(suicides_no))) %>% 
+  filter(!miss %in% c(0,12)), by = c("country", "year")) %>% 
+  filter(is.na(suicides_no))
+```
+
+Data from 2016 are missing with age group 5-14 years old
+
+Let's find out how many missing data with each country each year
+
+```{r}
+data %>% group_by(country, year) %>% summarise(avg_rate = mean(suicides_rate)) %>% summarise(n = sum(is.na(avg_rate))) %>% arrange(desc(n))
+  
+```
+
+Plot on map
+
+
+```{r}
+suicides <- data %>% group_by(country, year) %>% summarise(suicides_rate = mean(suicides_rate))
+
+world <- map_data("world")
+
+
+
+worldmap + suicides %>% group_by(country) %>% summarise(n = sum(is.na(suicides_rate))) %>% left_join(world, by = c("country" = "region")) %>%  
+  geom_polygon(data = ., aes(fill = n))  + scale_fill_viridis_c(trans = "log2")
+```
+
+Most of the data are from Russia, America nand Europe. There are some countries that have a lot of missing data
+
+Missing pattern
+```{r}
+data %>% group_by(country, year) %>% summarise(na = sum(is.na(suicides_no))) %>% filter(na > 0) %>% 
+  ggplot() + geom_tile(aes(year, country))
+```
+
+There are a lot of random missing data between all
+
+Hierachical clustering
+
+```{r}
+temp <- data %>% group_by(country, year) %>% summarise(na = sum(is.na(suicides_no)))
+```
+
+
+## What is generation's age range?
+
+```{r, message = F, warning = F}
+data %>% filter(!is.na(generation)) %>% 
+  separate(age, into =c("min", "max")) %>% mutate(max = ifelse(max== "years", 100, max)) %>% 
+  mutate(min = as.integer(min), max = as.integer(max)) %>% 
+  mutate(min = year - min, max = year - max) %>% 
+  ggplot() + geom_jitter(aes(generation, min, color = "Max possible birth year"), alpha = 0.3) + geom_jitter(aes(generation, max, color = "Min possible birth year"), alpha = 0.3) +
+  scale_color_manual(name = "", values = c("green", "red")) + theme(legend.position = "top") + ylab("Birth year")
+```
+
+- Since Age values are not provided but put in the age range, we can only estimate the actual year birth.
+
+From the data, birth year of :
+
+- G.I generation is aroung 1900
+
+- Silent generation is around 1925
+
+- Boomers generation is around 1955
+
+- Generation X is around 1975
+
+- Millennials is around 1980
+
+- Generation Z is around 2000
+
+Compare to Wiki
+
+- G.I generation birth year is from 1900s to late 1920s
+
+- Silent generation birth year is from late 1920s to mid 1940s
+
+- Boomers generation birth year is from 1946 to 1964
+
+- Genration X birth year is from early-to-mid 1960s to the early 1980s
+
+- Millennials birth year is from early 1980s to early 2000s
+
+- Generation Z birth year is from 1990s till now
+
+There is no big discrepancy between data set and Wiki, no outliner either, so it is safe to assume that there is no mistake in our data.
+
+# Combines with other data
+
+```{r}
+
+
+
+```
+
+
+Continents
+
+Country size so we can calculate population/area
+
+map package?
+
+
+# Analyze
+
+## Suicides rate by year
+
+Suicides rate per country per year of all recorded country visualized in boxplot.
+The number on top shows number of countries recorded in each year.
+
+
+```{r}
+data %>% filter(!is.na(suicides_rate)) %>% 
+  group_by(country, year) %>% 
+  summarise(suicides_rate = sum(suicides_no)/sum(population)) %>%
+  ungroup() %>% group_by(year) %>% mutate(n = n()) %>% 
+  ggplot(aes(x = factor(year))) + geom_boxplot(aes(y = suicides_rate )) + geom_text(aes(label = n, y = 0.0006))
+```
+
+
+### By countries
+
+```{r, warning=FALSE, message=FALSE}
+country_gif <- data %>% 
+    group_by(country,year) %>% summarise(n = sum(suicides_no)) %>% filter(!is.na(n)) %>% ggplot() + geom_line(aes(year, n, color = country)) + theme(legend.position = "none") + transition_reveal(year)
+
+anim_save("country_gif.gif", country_gif)
+```
+
+![](country_gif.gif)
+
+### By continents
+
+## Suides rate by year and Age group
+
+### By countries
+
+### By continents
+
+## GDP
+
+No relation ship between GDP and suicide rate
+
+```{r}
+data %>% group_by(country, year) %>% 
+  summarise(suicides_rate = sum(suicides_no)/sum(population)) %>% 
+  left_join(countrystat, by = c("country", "year")) %>% 
+  ggplot(aes(gdp_capita, suicides_rate)) + geom_point() + geom_smooth(method = "loess")
+```
+
+Suicides rate per country per year
+
+
+
+
+# From 2010
+
+```{r}
+worldmap + data %>% filter(year >= 2010 & year < 2016) %>%
+  group_by(country) %>% summarise(n = sum(suicides_no)) %>% filter(!is.na(n)) %>% 
+  left_join(world, by = c("country" = "region")) %>%  
+  geom_polygon(data = ., aes(fill = n))  + scale_fill_viridis_c(trans = "log10")
+```
+
+
+
+# Without year
+
+Fit model to predict Suicide rate based on gdp, pop, area
+
+# Year
+
+Population?
+
+# Finland
+
+```{r}
+data %>% filter(country == "Finland") %>% 
+  filter(!is.na(suicides_no)) %>% 
+  ggplot() + geom_point(aes(year, suicides_no, color = fct_reorder2(age, year, suicides_no))) +
+  geom_line(aes(year, suicides_no, colour = age)) + facet_wrap(~sex)
+
+```
+
+
+# By gender
+
+```{r}
+data %>% 
+  group_by(year, sex, country) %>% 
+  summarise(n0 = mean(suicides_no, na.rm = T)/mean(population, na.rm = T)) %>% 
+  ggplot(aes(factor(year), n0, color = sex)) + geom_boxplot()
+```
+

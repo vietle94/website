@@ -1,0 +1,367 @@
+---
+title: "Suicide rate"
+date: 2019-05-14T10-24-00
+output: 
+  md_document: default
+  html_document:
+    toc : TRUE
+---
+
+
+
+<div id="load-library" class="section level1">
+<h1>Load library ——————</h1>
+<pre class="r"><code>library(tidyverse)
+library(skimr)
+library(maps)
+library(gganimate)</code></pre>
+</div>
+<div id="load-data" class="section level1">
+<h1>Load data ——————</h1>
+<pre class="r"><code>data &lt;- read_csv(&quot;data/master.csv&quot;)</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   country = col_character(),
+##   year = col_double(),
+##   sex = col_character(),
+##   age = col_character(),
+##   suicides_no = col_double(),
+##   population = col_double(),
+##   `suicides/100k pop` = col_double(),
+##   `country-year` = col_character(),
+##   `HDI for year` = col_double(),
+##   `gdp_for_year ($)` = col_number(),
+##   `gdp_per_capita ($)` = col_double(),
+##   generation = col_character()
+## )</code></pre>
+<pre class="r"><code>data &lt;- data %&gt;% rename(HDI = `HDI for year`,
+                        suicides_rate = `suicides/100k pop`,
+                        gdp_yearly = `gdp_for_year ($)`,
+                        gdp_capita = `gdp_per_capita ($)`)</code></pre>
+</div>
+<div id="load-extra-data-for-worldmaps-and-statistics" class="section level1">
+<h1>Load extra data for worldmaps and statistics</h1>
+<div id="for-world-map" class="section level2">
+<h2>For world map</h2>
+<pre class="r"><code>library(maps)
+
+world &lt;- map_data(&quot;world&quot;)
+world[world$region == &quot;Antigua&quot; | world$region == &quot;Barbuda&quot;,]$region &lt;- &quot;Antigua and Barbuda&quot;
+world[world$region == &quot;Cape Verde&quot;,]$region &lt;- &quot;Cabo Verde&quot;
+world[world$region == &quot;South Korea&quot;,]$region &lt;- &quot;Republic of Korea&quot;
+world[world$region == &quot;Russia&quot;,]$region &lt;- &quot;Russian Federation&quot;
+world[world$region == &quot;Saint Kitts&quot; | world$region == &quot;Nevis&quot;,]$region &lt;- &quot;Saint Kitts and Nevis&quot;
+world[world$region == &quot;Saint Vincent&quot; | world$region == &quot;Grenadines&quot;,]$region &lt;- &quot;Saint Vincent and Grenadines&quot;
+world[world$region == &quot;Trinidad&quot; | world$region == &quot;Tobago&quot;,]$region &lt;- &quot;Trinidad and Tobago&quot;
+world[world$region == &quot;UK&quot;,]$region &lt;- &quot;United Kingdom&quot;
+world[world$region == &quot;USA&quot;,]$region &lt;- &quot;United States&quot;
+world[world$subregion == &quot;Macao&quot; &amp; !is.na(world$subregion),]$region &lt;- &quot;Macau&quot;
+
+worldmap &lt;- ggplot(data = world, aes(long, lat, group = group)) + geom_polygon(fill = &quot;#f2f2f2&quot;) +
+  theme(panel.background = element_blank(),
+                   axis.title = element_blank(),
+                   axis.line.x = element_blank(),
+                   axis.ticks = element_blank(),
+                   axis.text = element_blank()) +
+   coord_fixed(1.2)</code></pre>
+</div>
+<div id="for-statistics" class="section level2">
+<h2>For statistics</h2>
+<ul>
+<li><p>Get area</p></li>
+<li><p>Get continents</p></li>
+<li><p>Get country codes</p></li>
+</ul>
+<p>Might not be a good idea</p>
+<pre class="r"><code># library(wbstats)
+
+# wbcountries() %&gt;% view()
+
+# Searching area indicator in the database
+# wbsearch(pattern = &quot;area&quot;) 
+
+#wb &lt;- wb(country = &quot;all&quot;, indicator = &quot;AG.SRF.TOTL.K2&quot;, startdate = 1985, enddate = 2016) %&gt;% 
+ # rename(year = date) %&gt;% 
+#  mutate(year = as.numeric(year))
+#temp &lt;- left_join(countrystat, wb, by = c(&quot;country&quot; = &quot;country&quot;, &quot;year&quot; = &quot;year&quot;))
+
+#countries &lt;- wbcountries()
+
+#temp %&gt;% filter(is.na(iso3c)) %&gt;% view()</code></pre>
+</div>
+</div>
+<div id="data-exploratory" class="section level1">
+<h1>Data Exploratory ———————–</h1>
+<div id="have-a-look" class="section level2">
+<h2>Have a look</h2>
+<pre class="r"><code>summary(data)</code></pre>
+<pre><code>##    country               year          sex                age           
+##  Length:27820       Min.   :1985   Length:27820       Length:27820      
+##  Class :character   1st Qu.:1995   Class :character   Class :character  
+##  Mode  :character   Median :2002   Mode  :character   Mode  :character  
+##                     Mean   :2001                                        
+##                     3rd Qu.:2008                                        
+##                     Max.   :2016                                        
+##                                                                         
+##   suicides_no        population       suicides_rate    country-year      
+##  Min.   :    0.0   Min.   :     278   Min.   :  0.00   Length:27820      
+##  1st Qu.:    3.0   1st Qu.:   97498   1st Qu.:  0.92   Class :character  
+##  Median :   25.0   Median :  430150   Median :  5.99   Mode  :character  
+##  Mean   :  242.6   Mean   : 1844794   Mean   : 12.82                     
+##  3rd Qu.:  131.0   3rd Qu.: 1486143   3rd Qu.: 16.62                     
+##  Max.   :22338.0   Max.   :43805214   Max.   :224.97                     
+##                                                                          
+##       HDI          gdp_yearly          gdp_capita      generation       
+##  Min.   :0.483   Min.   :4.692e+07   Min.   :   251   Length:27820      
+##  1st Qu.:0.713   1st Qu.:8.985e+09   1st Qu.:  3447   Class :character  
+##  Median :0.779   Median :4.811e+10   Median :  9372   Mode  :character  
+##  Mean   :0.777   Mean   :4.456e+11   Mean   : 16866                     
+##  3rd Qu.:0.855   3rd Qu.:2.602e+11   3rd Qu.: 24874                     
+##  Max.   :0.944   Max.   :1.812e+13   Max.   :126352                     
+##  NA&#39;s   :19456</code></pre>
+<ul>
+<li><p>country-year column is just a concatenation of country and year column</p></li>
+<li><p>suicides/100k pop is calculated by suicides / population * 100000</p></li>
+<li><p>HDI is Human Development Report, seems missing alot, the only variable is missing</p></li>
+<li><p>Age is divided into brackets</p></li>
+</ul>
+</div>
+<div id="a-closer-look" class="section level2">
+<h2>A closer look:</h2>
+<pre class="r"><code>skim_with(numeric = list(hist = NULL))
+skim(data) </code></pre>
+<pre><code>## Skim summary statistics
+##  n obs: 27820 
+##  n variables: 12 
+## 
+## -- Variable type:character ---------------------------------------------------------------------------------------------
+##      variable missing complete     n min max empty n_unique
+##           age       0    27820 27820   9  11     0        6
+##       country       0    27820 27820   4  28     0      101
+##  country-year       0    27820 27820   8  32     0     2321
+##    generation       0    27820 27820   6  15     0        6
+##           sex       0    27820 27820   4   6     0        2
+## 
+## -- Variable type:numeric -----------------------------------------------------------------------------------------------
+##       variable missing complete     n          mean            sd
+##     gdp_capita       0    27820 27820   16866.46      18887.58   
+##     gdp_yearly       0    27820 27820       4.5e+11       1.5e+12
+##            HDI   19456     8364 27820       0.78          0.093  
+##     population       0    27820 27820 1844793.62    3911779.44   
+##    suicides_no       0    27820 27820     242.57        902.05   
+##  suicides_rate       0    27820 27820      12.82         18.96   
+##           year       0    27820 27820    2001.26          8.47   
+##          p0      p25          p50           p75         p100
+##   251        3447      9372         24874       126352      
+##     4.7e+07 9e+09         4.8e+10       2.6e+11      1.8e+13
+##     0.48        0.71      0.78          0.85         0.94   
+##   278       97498.5  430150       1486143.25         4.4e+07
+##     0           3        25           131        22338      
+##     0           0.92      5.99         16.62       224.97   
+##  1985        1995      2002          2008         2016</code></pre>
+<p>There are:</p>
+<ul>
+<li><p>6 Age brackets</p></li>
+<li><p>101 differenet countries in this data set</p></li>
+<li><p>Year from 1985 to 2016. (32 years)</p></li>
+<li><p>2321 combinations of country-year (less than 32 * 101). Must be some implicit missing data with year and country</p></li>
+<li><p>6 different generations</p></li>
+<li><p>2 Sex</p></li>
+</ul>
+</div>
+<div id="extract-country-stats" class="section level2">
+<h2>Extract country stats</h2>
+<p>HDI, GDP per year and per capital are values based on country so it makes sense to extract those values into another
+dataframe</p>
+<pre class="r"><code>countrystat &lt;- data %&gt;% select(country, year, gdp_yearly, gdp_capita, HDI) %&gt;% 
+  distinct()
+
+data &lt;- data %&gt;% select(-gdp_yearly, -gdp_capita, -HDI, -`country-year`)</code></pre>
+</div>
+<div id="review-implicit-missing-data" class="section level2">
+<h2>Review implicit missing data</h2>
+<pre class="r"><code>data &lt;- data %&gt;% complete(country, year, sex, age)</code></pre>
+<p>Pattern of missing data</p>
+<pre class="r"><code>data %&gt;% group_by(country, year) %&gt;% 
+  summarise(miss = sum(is.na(suicides_no))) %&gt;% 
+  ungroup() %&gt;% count(miss)</code></pre>
+<pre><code>## # A tibble: 3 x 2
+##    miss     n
+##   &lt;int&gt; &lt;int&gt;
+## 1     0  2305
+## 2     2    16
+## 3    12   911</code></pre>
+<p>So each country every year can either miss all data, have all data, but there are some country only miss 2 data, Let’s review those</p>
+<pre class="r"><code>data %&gt;% filter(year == 2016) %&gt;% right_join(data %&gt;% group_by(country, year) %&gt;% 
+  summarise(miss = sum(is.na(suicides_no))) %&gt;% 
+  filter(!miss %in% c(0,12)), by = c(&quot;country&quot;, &quot;year&quot;)) %&gt;% 
+  filter(is.na(suicides_no))</code></pre>
+<pre><code>## # A tibble: 32 x 9
+##    country  year sex   age   suicides_no population suicides_rate
+##    &lt;chr&gt;   &lt;dbl&gt; &lt;chr&gt; &lt;chr&gt;       &lt;dbl&gt;      &lt;dbl&gt;         &lt;dbl&gt;
+##  1 Armenia  2016 fema~ 5-14~          NA         NA            NA
+##  2 Armenia  2016 male  5-14~          NA         NA            NA
+##  3 Austria  2016 fema~ 5-14~          NA         NA            NA
+##  4 Austria  2016 male  5-14~          NA         NA            NA
+##  5 Croatia  2016 fema~ 5-14~          NA         NA            NA
+##  6 Croatia  2016 male  5-14~          NA         NA            NA
+##  7 Cyprus   2016 fema~ 5-14~          NA         NA            NA
+##  8 Cyprus   2016 male  5-14~          NA         NA            NA
+##  9 Czech ~  2016 fema~ 5-14~          NA         NA            NA
+## 10 Czech ~  2016 male  5-14~          NA         NA            NA
+## # ... with 22 more rows, and 2 more variables: generation &lt;chr&gt;,
+## #   miss &lt;int&gt;</code></pre>
+<p>Data from 2016 are missing with age group 5-14 years old</p>
+<p>Let’s find out how many missing data with each country each year</p>
+<pre class="r"><code>data %&gt;% group_by(country, year) %&gt;% summarise(avg_rate = mean(suicides_rate)) %&gt;% summarise(n = sum(is.na(avg_rate))) %&gt;% arrange(desc(n))</code></pre>
+<pre><code>## # A tibble: 101 x 2
+##    country                    n
+##    &lt;chr&gt;                  &lt;int&gt;
+##  1 Mongolia                  32
+##  2 Cabo Verde                31
+##  3 Dominica                  31
+##  4 Macau                     31
+##  5 Bosnia and Herzegovina    30
+##  6 Oman                      29
+##  7 Saint Kitts and Nevis     29
+##  8 San Marino                29
+##  9 Nicaragua                 26
+## 10 United Arab Emirates      26
+## # ... with 91 more rows</code></pre>
+<p>Plot on map</p>
+<pre class="r"><code>suicides &lt;- data %&gt;% group_by(country, year) %&gt;% summarise(suicides_rate = mean(suicides_rate))
+
+world &lt;- map_data(&quot;world&quot;)
+
+
+
+worldmap + suicides %&gt;% group_by(country) %&gt;% summarise(n = sum(is.na(suicides_rate))) %&gt;% left_join(world, by = c(&quot;country&quot; = &quot;region&quot;)) %&gt;%  
+  geom_polygon(data = ., aes(fill = n))  + scale_fill_viridis_c(trans = &quot;log2&quot;)</code></pre>
+<p><img src="/project/Suicides-rate-R/index_files/figure-html/unnamed-chunk-13-1.png" width="1152" /></p>
+<p>Most of the data are from Russia, America nand Europe. There are some countries that have a lot of missing data</p>
+<p>Missing pattern</p>
+<pre class="r"><code>data %&gt;% group_by(country, year) %&gt;% summarise(na = sum(is.na(suicides_no))) %&gt;% filter(na &gt; 0) %&gt;% 
+  ggplot() + geom_tile(aes(year, country))</code></pre>
+<p><img src="/project/Suicides-rate-R/index_files/figure-html/unnamed-chunk-14-1.png" width="1152" /></p>
+<p>There are a lot of random missing data between all</p>
+<p>Hierachical clustering</p>
+<pre class="r"><code>temp &lt;- data %&gt;% group_by(country, year) %&gt;% summarise(na = sum(is.na(suicides_no)))</code></pre>
+</div>
+<div id="what-is-generations-age-range" class="section level2">
+<h2>What is generation’s age range?</h2>
+<pre class="r"><code>data %&gt;% filter(!is.na(generation)) %&gt;% 
+  separate(age, into =c(&quot;min&quot;, &quot;max&quot;)) %&gt;% mutate(max = ifelse(max== &quot;years&quot;, 100, max)) %&gt;% 
+  mutate(min = as.integer(min), max = as.integer(max)) %&gt;% 
+  mutate(min = year - min, max = year - max) %&gt;% 
+  ggplot() + geom_jitter(aes(generation, min, color = &quot;Max possible birth year&quot;), alpha = 0.3) + geom_jitter(aes(generation, max, color = &quot;Min possible birth year&quot;), alpha = 0.3) +
+  scale_color_manual(name = &quot;&quot;, values = c(&quot;green&quot;, &quot;red&quot;)) + theme(legend.position = &quot;top&quot;) + ylab(&quot;Birth year&quot;)</code></pre>
+<p><img src="/project/Suicides-rate-R/index_files/figure-html/unnamed-chunk-16-1.png" width="1152" /></p>
+<ul>
+<li>Since Age values are not provided but put in the age range, we can only estimate the actual year birth.</li>
+</ul>
+<p>From the data, birth year of :</p>
+<ul>
+<li><p>G.I generation is aroung 1900</p></li>
+<li><p>Silent generation is around 1925</p></li>
+<li><p>Boomers generation is around 1955</p></li>
+<li><p>Generation X is around 1975</p></li>
+<li><p>Millennials is around 1980</p></li>
+<li><p>Generation Z is around 2000</p></li>
+</ul>
+<p>Compare to Wiki</p>
+<ul>
+<li><p>G.I generation birth year is from 1900s to late 1920s</p></li>
+<li><p>Silent generation birth year is from late 1920s to mid 1940s</p></li>
+<li><p>Boomers generation birth year is from 1946 to 1964</p></li>
+<li><p>Genration X birth year is from early-to-mid 1960s to the early 1980s</p></li>
+<li><p>Millennials birth year is from early 1980s to early 2000s</p></li>
+<li><p>Generation Z birth year is from 1990s till now</p></li>
+</ul>
+<p>There is no big discrepancy between data set and Wiki, no outliner either, so it is safe to assume that there is no mistake in our data.</p>
+</div>
+</div>
+<div id="combines-with-other-data" class="section level1">
+<h1>Combines with other data</h1>
+<p>Continents</p>
+<p>Country size so we can calculate population/area</p>
+<p>map package?</p>
+</div>
+<div id="analyze" class="section level1">
+<h1>Analyze</h1>
+<div id="suicides-rate-by-year" class="section level2">
+<h2>Suicides rate by year</h2>
+<p>Suicides rate per country per year of all recorded country visualized in boxplot.
+The number on top shows number of countries recorded in each year.</p>
+<pre class="r"><code>data %&gt;% filter(!is.na(suicides_rate)) %&gt;% 
+  group_by(country, year) %&gt;% 
+  summarise(suicides_rate = sum(suicides_no)/sum(population)) %&gt;%
+  ungroup() %&gt;% group_by(year) %&gt;% mutate(n = n()) %&gt;% 
+  ggplot(aes(x = factor(year))) + geom_boxplot(aes(y = suicides_rate )) + geom_text(aes(label = n, y = 0.0006))</code></pre>
+<p><img src="/project/Suicides-rate-R/index_files/figure-html/unnamed-chunk-18-1.png" width="1152" /></p>
+<div id="by-countries" class="section level3">
+<h3>By countries</h3>
+<pre class="r"><code>country_gif &lt;- data %&gt;% 
+    group_by(country,year) %&gt;% summarise(n = sum(suicides_no)) %&gt;% filter(!is.na(n)) %&gt;% ggplot() + geom_line(aes(year, n, color = country)) + theme(legend.position = &quot;none&quot;) + transition_reveal(year)
+
+anim_save(&quot;country_gif.gif&quot;, country_gif)</code></pre>
+<p><img src="country_gif.gif" /></p>
+</div>
+<div id="by-continents" class="section level3">
+<h3>By continents</h3>
+</div>
+</div>
+<div id="suides-rate-by-year-and-age-group" class="section level2">
+<h2>Suides rate by year and Age group</h2>
+<div id="by-countries-1" class="section level3">
+<h3>By countries</h3>
+</div>
+<div id="by-continents-1" class="section level3">
+<h3>By continents</h3>
+</div>
+</div>
+<div id="gdp" class="section level2">
+<h2>GDP</h2>
+<p>No relation ship between GDP and suicide rate</p>
+<pre class="r"><code>data %&gt;% group_by(country, year) %&gt;% 
+  summarise(suicides_rate = sum(suicides_no)/sum(population)) %&gt;% 
+  left_join(countrystat, by = c(&quot;country&quot;, &quot;year&quot;)) %&gt;% 
+  ggplot(aes(gdp_capita, suicides_rate)) + geom_point() + geom_smooth(method = &quot;loess&quot;)</code></pre>
+<pre><code>## Warning: Removed 927 rows containing non-finite values (stat_smooth).</code></pre>
+<pre><code>## Warning: Removed 927 rows containing missing values (geom_point).</code></pre>
+<p><img src="/project/Suicides-rate-R/index_files/figure-html/unnamed-chunk-20-1.png" width="1152" /></p>
+<p>Suicides rate per country per year</p>
+</div>
+</div>
+<div id="from-2010" class="section level1">
+<h1>From 2010</h1>
+<pre class="r"><code>worldmap + data %&gt;% filter(year &gt;= 2010 &amp; year &lt; 2016) %&gt;%
+  group_by(country) %&gt;% summarise(n = sum(suicides_no)) %&gt;% filter(!is.na(n)) %&gt;% 
+  left_join(world, by = c(&quot;country&quot; = &quot;region&quot;)) %&gt;%  
+  geom_polygon(data = ., aes(fill = n))  + scale_fill_viridis_c(trans = &quot;log10&quot;)</code></pre>
+<p><img src="/project/Suicides-rate-R/index_files/figure-html/unnamed-chunk-21-1.png" width="1152" /></p>
+</div>
+<div id="without-year" class="section level1">
+<h1>Without year</h1>
+<p>Fit model to predict Suicide rate based on gdp, pop, area</p>
+</div>
+<div id="year" class="section level1">
+<h1>Year</h1>
+<p>Population?</p>
+</div>
+<div id="finland" class="section level1">
+<h1>Finland</h1>
+<pre class="r"><code>data %&gt;% filter(country == &quot;Finland&quot;) %&gt;% 
+  filter(!is.na(suicides_no)) %&gt;% 
+  ggplot() + geom_point(aes(year, suicides_no, color = fct_reorder2(age, year, suicides_no))) +
+  geom_line(aes(year, suicides_no, colour = age)) + facet_wrap(~sex)</code></pre>
+<p><img src="/project/Suicides-rate-R/index_files/figure-html/unnamed-chunk-22-1.png" width="1152" /></p>
+</div>
+<div id="by-gender" class="section level1">
+<h1>By gender</h1>
+<pre class="r"><code>data %&gt;% 
+  group_by(year, sex, country) %&gt;% 
+  summarise(n0 = mean(suicides_no, na.rm = T)/mean(population, na.rm = T)) %&gt;% 
+  ggplot(aes(factor(year), n0, color = sex)) + geom_boxplot()</code></pre>
+<pre><code>## Warning: Removed 1822 rows containing non-finite values (stat_boxplot).</code></pre>
+<p><img src="/project/Suicides-rate-R/index_files/figure-html/unnamed-chunk-23-1.png" width="1152" /></p>
+</div>
