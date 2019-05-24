@@ -77,7 +77,7 @@ dfPlot &lt;- dfPlot %&gt;%
         strip.text = element_text(face = &quot;bold&quot;, size = 15),
         panel.border = element_rect(colour = &quot;black&quot;, fill=NA, size=1)) +
   facet_wrap(~month, nrow = 4, ncol = 3, scales = &quot;free&quot;) </code></pre>
-<p><img src="/post/calendarheatmap/calendarheatmap_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p><img src="/post/calendarheatmap/index_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
 <p>Create better color scale for easy visualization and add the date of the month to the graph</p>
 <pre class="r"><code>dfPlot %&gt;%
   ggplot(aes(weekday,-week, fill = ValueCol)) +
@@ -96,7 +96,7 @@ dfPlot &lt;- dfPlot %&gt;%
   scale_fill_gradient2(midpoint = 0.5) +
   facet_wrap(~month, nrow = 4, ncol = 3, scales = &quot;free&quot;) +
   labs(title = &quot;Calendar heatmap 2019&quot;)</code></pre>
-<p><img src="/post/calendarheatmap/calendarheatmap_files/figure-html/unnamed-chunk-5-1.png" width="768" /></p>
+<p><img src="/post/calendarheatmap/index_files/figure-html/unnamed-chunk-5-1.png" width="768" /></p>
 </div>
 <div id="final-graph" class="section level1">
 <h1>Final graph</h1>
@@ -126,5 +126,5 @@ dfPlot &lt;- dfPlot %&gt;%
                                               direction = &quot;horizontal&quot;)) +
   facet_wrap(~month, nrow = 4, ncol = 3, scales = &quot;free&quot;) +
   labs(title = &quot;Calendar heatmap 2019&quot;)</code></pre>
-<p><img src="/post/calendarheatmap/calendarheatmap_files/figure-html/calendarheatmap-1.png" width="768" /></p>
+<p><img src="/post/calendarheatmap/index_files/figure-html/calendarheatmap-1.png" width="768" /></p>
 </div>
