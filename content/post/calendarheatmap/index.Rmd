@@ -5,7 +5,7 @@ authors: ["admin"]
 output: 
   blogdown::html_page:
     toc: true
-summary: Survival rate of passengers on the Titanic by machine learning.
+summary: Calendar heatmap with ggplot2 in R.
 categories: ["visualization", "R"]
 tags: ["ggplot2", "calendar heatmap"]
 ---
