@@ -7,7 +7,6 @@ output:
     toc : TRUE
 ---
 
-
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(
   fig.width=12, fig.height=8,
@@ -22,6 +21,11 @@ library(tidyverse)
 library(skimr)
 library(maps)
 library(gganimate)
+theme_set(theme_minimal() +
+            theme(
+              legend.title = element_text(size = 11),
+              legend.text = element_text(size = 29, hjust = 0)
+            ))
 ```
 
 # Load data ------------------
@@ -251,7 +255,7 @@ Compare to Wiki
 
 - Generation Z birth year is from 1990s till now
 
-There is no big discrepancy between data set and Wiki, no outliner either, so it is safe to assume that there is no mistake in our data.
+There is no big discrepancy between data set and Wiki, no outliner either, so it is safe to assume that there is no mistake in oudr data.
 
 # Combines with other data
 
@@ -288,14 +292,13 @@ data %>% filter(!is.na(suicides_rate)) %>%
 
 ### By countries
 
-```{r, warning=FALSE, message=FALSE}
-country_gif <- data %>% 
+```{r, warning=FALSE, message=FALSE,fig.width = 10, fig.length = 10}
+data %>% 
     group_by(country,year) %>% summarise(n = sum(suicides_no)) %>% filter(!is.na(n)) %>% ggplot() + geom_line(aes(year, n, color = country)) + theme(legend.position = "none") + transition_reveal(year)
 
-anim_save("country_gif.gif", country_gif)
 ```
 
-![](country_gif.gif)
+
 
 ### By continents
 
@@ -359,4 +362,3 @@ data %>%
   summarise(n0 = mean(suicides_no, na.rm = T)/mean(population, na.rm = T)) %>% 
   ggplot(aes(factor(year), n0, color = sex)) + geom_boxplot()
 ```
-

@@ -1,0 +1,130 @@
+---
+title: "Calendar heatmap with ggplot2 in R"
+date: 2019-05-24T10-24-00
+authors: ["admin"]
+output: 
+  blogdown::html_page:
+    toc: true
+summary: Survival rate of passengers on the Titanic by machine learning.
+categories: ["visualization", "R"]
+tags: ["ggplot2", "calendar heatmap"]
+---
+
+
+<div id="TOC">
+<ul>
+<li><a href="#intro">Intro</a></li>
+<li><a href="#calendar-heatmap">Calendar heatmap</a></li>
+<li><a href="#final-graph">Final graph</a></li>
+</ul>
+</div>
+
+<div id="intro" class="section level1">
+<h1>Intro</h1>
+<p>There are many packages outthere that can create a calendar heatmap. Most of them are usually in an format that is efficient for analysis overview but not so easy for a normal person to comprehend at first glance like the following graph:</p>
+<p>{{&lt; figure src=“Normal_calendarheatmap.png” title=“Other calendar heatmap” &gt;}}</p>
+<p>The aim of this post is to create a calendar heatmap that has the format exactly like a normal caldendar like this:</p>
+<p>{{&lt; figure src=“featured.png” title=“Optimal calendar heatmap” &gt;}}</p>
+<p>{{&lt; figure library=“1” src=“./calendarheatmap_files/figure-html/calendarheatmap -1.png” title=“A caption” &gt;}}</p>
+</div>
+<div id="calendar-heatmap" class="section level1">
+<h1>Calendar heatmap</h1>
+<p>Load library</p>
+<pre class="r"><code>library(tidyverse) # contains ggplot2 (for plot) and dplyr (for easy data manipulation)
+library(lubridate) # For date and time manipulation</code></pre>
+<p>Create some data for the heatmap</p>
+<pre class="r"><code>df  &lt;-  tibble(
+  DateCol = seq(
+    dmy(&quot;01/01/2019&quot;),
+    dmy(&quot;31/12/2019&quot;),
+    &quot;days&quot;
+  ),
+  ValueCol = runif(365)
+)</code></pre>
+<p>In order to plot calendar, the following varriables need to be obtained:</p>
+<ul>
+<li><p>Week date</p></li>
+<li><p>Week of the month</p></li>
+<li><p>Week of the year</p></li>
+<li><p>Month of the year</p></li>
+<li><p>Date of the year</p></li>
+</ul>
+<p>Save the transformed data.</p>
+<pre class="r"><code>dfPlot &lt;- df %&gt;% 
+  mutate(weekday = wday(DateCol, label = T, week_start = 7), # can put week_start = 1 to start week on Monday
+         month = month(DateCol, label = T),
+         date = yday(DateCol),
+         week = epiweek(DateCol))
+
+# isoweek makes the last week of the year as week 1, so need to change that to week 53 for the plot
+dfPlot$week[dfPlot$month==&quot;Dec&quot; &amp; dfPlot$week ==1] = 53 
+
+dfPlot &lt;- dfPlot %&gt;% 
+  group_by(month) %&gt;% 
+  mutate(monthweek = 1 + week - min(week))</code></pre>
+<p>Plot</p>
+<pre class="r"><code>dfPlot %&gt;%  
+  ggplot(aes(weekday,-week, fill = ValueCol)) +
+  geom_tile(colour = &quot;white&quot;)  + 
+  theme(aspect.ratio = 1/5,
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        axis.ticks = element_blank(),
+        panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(face = &quot;bold&quot;, size = 15),
+        panel.border = element_rect(colour = &quot;black&quot;, fill=NA, size=1)) +
+  facet_wrap(~month, nrow = 4, ncol = 3, scales = &quot;free&quot;) </code></pre>
+<p><img src="/post/calendarheatmap/calendarheatmap_files/figure-html/unnamed-chunk-4-1.png" width="672" /></p>
+<p>Create better color scale for easy visualization and add the date of the month to the graph</p>
+<pre class="r"><code>dfPlot %&gt;%
+  ggplot(aes(weekday,-week, fill = ValueCol)) +
+  geom_tile(colour = &quot;white&quot;)  + 
+  geom_text(aes(label = day(DateCol)), size = 3) +
+  theme(aspect.ratio = 1/2,
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        axis.ticks = element_blank(),
+        panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(face = &quot;bold&quot;, size = 15),
+        panel.border = element_rect(colour = &quot;black&quot;, fill=NA, size=1)) +
+  scale_fill_gradient2(midpoint = 0.5) +
+  facet_wrap(~month, nrow = 4, ncol = 3, scales = &quot;free&quot;) +
+  labs(title = &quot;Calendar heatmap 2019&quot;)</code></pre>
+<p><img src="/post/calendarheatmap/calendarheatmap_files/figure-html/unnamed-chunk-5-1.png" width="768" /></p>
+</div>
+<div id="final-graph" class="section level1">
+<h1>Final graph</h1>
+<pre class="r"><code>dfPlot %&gt;%
+  ggplot(aes(weekday,-week, fill = ValueCol)) +
+  geom_tile(colour = &quot;white&quot;)  + 
+  geom_text(aes(label = day(DateCol)), size = 2.5, color = &quot;black&quot;) +
+  theme(aspect.ratio = 1/2,
+        legend.position = &quot;top&quot;,
+        legend.key.width = unit(3, &quot;cm&quot;),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        panel.grid = element_blank(),
+        axis.ticks = element_blank(),
+        panel.background = element_blank(),
+        legend.title.align = 0.5,
+        strip.background = element_blank(),
+        strip.text = element_text(face = &quot;bold&quot;, size = 15),
+        panel.border = element_rect(colour = &quot;grey&quot;, fill=NA, size=1),
+        plot.title = element_text(hjust = 0.5, size = 21, face = &quot;bold&quot;,
+                                  margin = margin(0,0,0.5,0, unit = &quot;cm&quot;))) +
+  scale_fill_gradientn(colours = c(&quot;#6b9235&quot;, &quot;white&quot;, &quot;red&quot;),
+                       values = scales::rescale(c(-1, -0.05, 0, 0.05, 1)), 
+                       name = &quot;Values&quot;,
+                       guide = guide_colorbar(title.position = &quot;top&quot;, 
+                                              direction = &quot;horizontal&quot;)) +
+  facet_wrap(~month, nrow = 4, ncol = 3, scales = &quot;free&quot;) +
+  labs(title = &quot;Calendar heatmap 2019&quot;)</code></pre>
+<p><img src="/post/calendarheatmap/calendarheatmap_files/figure-html/calendarheatmap-1.png" width="768" /></p>
+</div>

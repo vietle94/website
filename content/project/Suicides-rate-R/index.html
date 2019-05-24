@@ -14,7 +14,12 @@ output:
 <pre class="r"><code>library(tidyverse)
 library(skimr)
 library(maps)
-library(gganimate)</code></pre>
+library(gganimate)
+theme_set(theme_minimal() +
+            theme(
+              legend.title = element_text(size = 11),
+              legend.text = element_text(size = 29, hjust = 0)
+            ))</code></pre>
 </div>
 <div id="load-data" class="section level1">
 <h1>Load data ——————</h1>
@@ -277,7 +282,7 @@ worldmap + suicides %&gt;% group_by(country) %&gt;% summarise(n = sum(is.na(suic
 <li><p>Millennials birth year is from early 1980s to early 2000s</p></li>
 <li><p>Generation Z birth year is from 1990s till now</p></li>
 </ul>
-<p>There is no big discrepancy between data set and Wiki, no outliner either, so it is safe to assume that there is no mistake in our data.</p>
+<p>There is no big discrepancy between data set and Wiki, no outliner either, so it is safe to assume that there is no mistake in oudr data.</p>
 </div>
 </div>
 <div id="combines-with-other-data" class="section level1">
@@ -300,11 +305,9 @@ The number on top shows number of countries recorded in each year.</p>
 <p><img src="/project/Suicides-rate-R/index_files/figure-html/unnamed-chunk-18-1.png" width="1152" /></p>
 <div id="by-countries" class="section level3">
 <h3>By countries</h3>
-<pre class="r"><code>country_gif &lt;- data %&gt;% 
-    group_by(country,year) %&gt;% summarise(n = sum(suicides_no)) %&gt;% filter(!is.na(n)) %&gt;% ggplot() + geom_line(aes(year, n, color = country)) + theme(legend.position = &quot;none&quot;) + transition_reveal(year)
-
-anim_save(&quot;country_gif.gif&quot;, country_gif)</code></pre>
-<p><img src="country_gif.gif" /></p>
+<pre class="r"><code>data %&gt;% 
+    group_by(country,year) %&gt;% summarise(n = sum(suicides_no)) %&gt;% filter(!is.na(n)) %&gt;% ggplot() + geom_line(aes(year, n, color = country)) + theme(legend.position = &quot;none&quot;) + transition_reveal(year)</code></pre>
+<p><img src="/project/Suicides-rate-R/index_files/figure-html/unnamed-chunk-19-1.gif" /><!-- --></p>
 </div>
 <div id="by-continents" class="section level3">
 <h3>By continents</h3>
