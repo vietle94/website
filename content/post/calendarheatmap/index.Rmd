@@ -14,11 +14,11 @@ tags: ["ggplot2", "calendar heatmap"]
 
 There are many packages outthere that can create a calendar heatmap. Most of them are usually in an format that is efficient for analysis overview but not so easy for a normal person to comprehend at first glance like the following graph: 
 
-![Other calendar heatmap](Normal_calendarheatmap.png)
+![](Normal_calendarheatmap.png)
 
 The aim of this post is to create a calendar heatmap that has the format exactly like a normal caldendar like this:
 
-![Optimal calendar heatmap](featured.png)
+![](featured.png)
 
 
 # Calendar heatmap
