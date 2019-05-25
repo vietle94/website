@@ -21,6 +21,8 @@ knitr::opts_chunk$set(
 
 A data about suicide rate was analyzed in this project. Mostly I will focus on visualization by various graphs. As someone famous said: "There are no good analysis, only useful ones", with that in mind, my illustrations are up to reader's interpretation. Furthur analysis into each country will be made in the near future.
 
+Note: the rate of suicide are in 1/100000
+
 Data were taken from:
 
 United Nations Development Program. (2018). Human development index (HDI). Retrieved from http://hdr.undp.org/en/indicators/137506
@@ -522,7 +524,7 @@ worldmap + rate %>% filter(year >= 2010 & year < 2016) %>%
   group_by(country) %>% summarise(n = mean(suicides_rate, na.rm = T)) %>% filter(!is.na(n)) %>% 
   left_join(world, by = c("country" = "region")) %>%  
   geom_polygon(data = ., aes(fill = n))  + 
-  scale_fill_viridis_c(name = "Average number of suicides",
+  scale_fill_viridis_c(name = "Average rate of suicides each year",
                        guide = guide_colorbar(title.position = "top", 
                                               direction = "horizontal")) +
   labs(title = "Average rate of suicide", subtitle = "Since 2010") +

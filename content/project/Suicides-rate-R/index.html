@@ -84,6 +84,7 @@ tags: ["ggplot2", "gganimate", "gif"]
 <div id="intro" class="section level1">
 <h1>Intro</h1>
 <p>A data about suicide rate was analyzed in this project. Mostly I will focus on visualization by various graphs. As someone famous said: “There are no good analysis, only useful ones”, with that in mind, my illustrations are up to reader’s interpretation. Furthur analysis into each country will be made in the near future.</p>
+<p>Note: the rate of suicide are in 1/100000</p>
 <p>Data were taken from:</p>
 <p>United Nations Development Program. (2018). Human development index (HDI). Retrieved from <a href="http://hdr.undp.org/en/indicators/137506" class="uri">http://hdr.undp.org/en/indicators/137506</a></p>
 <p>World Bank. (2018). World development indicators: GDP (current US$) by country:1985 to 2016. Retrieved from <a href="http://databank.worldbank.org/data/source/world-development-indicators#" class="uri">http://databank.worldbank.org/data/source/world-development-indicators#</a></p>
@@ -591,7 +592,7 @@ data &lt;- data %&gt;% select(-gdp_yearly, -gdp_capita, -HDI, -`country-year`)</
   group_by(country) %&gt;% summarise(n = mean(suicides_rate, na.rm = T)) %&gt;% filter(!is.na(n)) %&gt;% 
   left_join(world, by = c(&quot;country&quot; = &quot;region&quot;)) %&gt;%  
   geom_polygon(data = ., aes(fill = n))  + 
-  scale_fill_viridis_c(name = &quot;Average number of suicides&quot;,
+  scale_fill_viridis_c(name = &quot;Average rate of suicides each year&quot;,
                        guide = guide_colorbar(title.position = &quot;top&quot;, 
                                               direction = &quot;horizontal&quot;)) +
   labs(title = &quot;Average rate of suicide&quot;, subtitle = &quot;Since 2010&quot;) +
