@@ -27,11 +27,11 @@ subtitle = ""
 
   [[content.filter_button]]
     name = "Machine Learning"
-    category = "machine learning"
+    tag = "machine learning"
 
   [[content.filter_button]]
     name = "Visualization"
-    category = "visualization"
+    tag = "visualization"
 
 [design]
   # Choose how many columns the section has. Valid values: 1 or 2.

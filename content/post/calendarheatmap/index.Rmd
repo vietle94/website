@@ -6,8 +6,7 @@ output:
   blogdown::html_page:
     toc: true
 summary: Calendar heatmap with ggplot2 in R.
-categories: ["visualization", "R"]
-tags: ["ggplot2", "calendar heatmap"]
+tags: ["ggplot2", "calendar heatmap", "visualization", "R"]
 ---
 
 # Intro
