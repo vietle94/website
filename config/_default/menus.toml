@@ -19,7 +19,7 @@
   weight = 20
 
 [[main]]
-  name = "Highlights"
+  name = "Gallery"
   url = "#gallery"
   weight = 40
 
