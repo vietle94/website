@@ -206,7 +206,7 @@ data <- read_csv("data/newdat.csv", col_types = cols(
 library(leaflet)
 
 data %>%
-  filter(idate >= "2000-01-01") %>% 
+  filter(idate == "2000-01-01") %>% 
   leaflet() %>%
       addTiles() %>%
       addMarkers(~longitude, ~latitude, label = ~data$popmap %>% purrr::map(shiny::HTML) ,
