@@ -188,6 +188,18 @@ data$popmap <- data %>%
 
 # Data exploration
 
+```{r}
+data <- read_csv("data/newdat.csv", col_types = cols(
+  iyear = col_integer(),
+  latitude = col_double(),
+  longitude = col_double(),
+  attacktype3_txt = col_character(),
+  gname3 = col_character(),
+  nkill = col_integer(),
+  nwound = col_integer()
+))
+```
+
  Leaflet
 
 ```{r}
