@@ -7,8 +7,7 @@ output:
 
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(
-  fig.width=12, fig.height=8,
-  cache = T
+  fig.width=12, fig.height=8
 )
 
 ```
@@ -21,9 +20,7 @@ knitr::opts_chunk$set(
 library(tidyverse)
 library(skimr)
 library(maps)
-library(gganimate)
-library(plotly)
-library(streamgraph)
+library(leaflet)
 ```
 
 # Load data
@@ -79,29 +76,24 @@ colnames(data)
 Deal with latitude and longtitude
 ```{r}
 data %>% select(longitude, latitude) %>%  skim()
-data %>% filter(is.na(latitude)) %>% select(location, city, provstate, country_txt, specificity) %>% filter(is.na(specificity))
-
-data %>% map_df(~ str_detect(.,"Unknown" )) %>% summarise_all(sum, na.rm = TRUE)
 ```
 
 longitude value appear to be incorrect at -8.6e+07. By compare the location with actual coordinate on google, it is obvious that a decimal separator is missing. The code below will fix that by changing it to -86.185896
 
-```{r}
-data %>% filter(longitude == min(data$longitude, na.rm = T))
-
+```{r eval=FALSE}
 data[data$eventid == 198212240004, "longitude"] <- -86.185896
 
 ```
 
 Deal with missing longitude and latitude by using the country location as the incident location. The country location is obtained by using Mapquest API.
 
-```{r include=FALSE}
+```{r eval=FALSE, include=FALSE}
 KEY <- "YVjGrSZqSDBhUnGCcocPjsTwEpoBgaM5"
 ```
 
 
 
-```{r message=FALSE, warning=FALSE}
+```{r eval=FALSE}
 
 baseurl <- "http://www.mapquestapi.com/geocoding/v1/address?"
 
@@ -144,7 +136,7 @@ data <- data %>% left_join(temp, by = "eventid") %>%
 
 Missing date and month in the data were recorded as NA, change them to 1. Then create a new column called idate which combined year, month and date together
 
-```{r}
+```{r eval=FALSE}
 
 data$iday[data$iday == 0] <- 1
 data$imonth[data$imonth == 0] <- 1
@@ -157,14 +149,14 @@ data$idate <- data %>% unite(date, iyear, imonth, iday, sep = "-") %>%
 
 Group name contain non UTF-8 characters. The following code will fix it
 
-```{r}
+```{r eval=FALSE}
 data <- data %>%
   mutate_at(vars(gname, gname2, gname3), function(x){gsub('[^ -~]', '', x)})
 ```
 
 Create a label for leaflet map by making new column called popmap
 
-```{r}
+```{r eval=FALSE}
 data$popmap <- data %>%
   mutate(attacktype2_txt = ifelse(is.na(attacktype2_txt)," ", str_c(", ", attacktype2_txt)),
          attacktype3_txt = ifelse(is.na(attacktype3_txt)," ", str_c(", ", attacktype3_txt)),
@@ -203,13 +195,11 @@ data <- read_csv("data/newdat.csv", col_types = cols(
  Leaflet
 
 ```{r}
-library(leaflet)
-
 data %>%
   filter(idate == "2000-01-01") %>% 
   leaflet() %>%
       addTiles() %>%
-      addMarkers(~longitude, ~latitude, label = ~data$popmap %>% purrr::map(shiny::HTML) ,
+      addMarkers(~longitude, ~latitude, label = ~popmap %>% purrr::map(shiny::HTML) ,
                  clusterOptions = markerClusterOptions(disableClusteringAtZoom = 12)) %>%
       setMaxBounds(~min(data$longitude), ~min(data$latitude), ~max(data$longitude), ~max(data$latitude)) %>%
       setView(0,0, 2)
