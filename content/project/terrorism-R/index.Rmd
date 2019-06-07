@@ -188,63 +188,18 @@ data$popmap <- data %>%
 
 # Data exploration
 
-## Number of incidents per year globally
-
-```{r}
-data %>% count(iyear, region_txt) %>% ggplot() + geom_line(aes(iyear, n, color = fct_reorder2(region_txt, n, iyear))) + scale_x_continuous(breaks = 1970:2017) + theme(axis.text.x = element_text(angle = 45))
-```
-
-## Number of incidents per year globally
-
-```{r}
-(data %>% count(iyear, region_txt) %>% ggplot() + geom_area(aes(iyear, n, fill = region_txt)) + scale_x_continuous(breaks = 1970:2017) + theme(axis.text.x = element_text(angle = 45))) %>% 
-  ggplotly()
-
-```
-## Number of incidents
-
-```{r}
-(data %>% count(iyear, country_txt) %>% 
-  ggplot() +
-  geom_line(aes(iyear, n, color = country_txt, text = iyear)) +
-  theme(legend.position = "none")) %>% ggplotly()
-
-(data %>% count(iyear, country_txt) %>% 
-  ggplot() +
-  geom_area(aes(iyear, n, fill = country_txt, text = iyear)) +
-  theme(legend.position = "none")) %>% ggplotly()
-
-```
-
-
-## World map incidents each year
-
-```{r}
-#worldmap + geom_point(data = data , aes(x = longitude, y = latitude), alpha = 0.1, size = 0.5, color = "red") +
- # transition_states(iyear) +
-  #labs(title = "Year: {closest_state}")
-```
-
-
-## All recorded incidents
-
-```{r}
-(worldmap + 
-  geom_point(data = data , aes(x = longitude, y = latitude, frame = iyear), alpha = 0.1, size = 0.5, color = "red")) %>% 
-  ggplotly()
-```
-
-# Leaflet
+ Leaflet
 
 ```{r}
 library(leaflet)
 
-#data %>%
- # leaflet() %>% 
-  #    addTiles() %>%
-   #   addMarkers(~longitude, ~latitude, label = ~data$popmap %>% purrr::map(shiny::HTML) ,
-    #             clusterOptions = markerClusterOptions(disableClusteringAtZoom = 12)) %>% 
-     # setMaxBounds(~min(data$longitude), ~min(data$latitude), ~max(data$longitude), ~max(data$latitude)) %>% 
-      #setView(0,0, 2)
+data %>%
+  filter(idate >= "2000-01-01") %>% 
+  leaflet() %>% 
+      addTiles() %>%
+      addMarkers(~longitude, ~latitude, label = ~data$popmap %>% purrr::map(shiny::HTML) ,
+                 clusterOptions = markerClusterOptions(disableClusteringAtZoom = 12)) %>% 
+      setMaxBounds(~min(data$longitude), ~min(data$latitude), ~max(data$longitude), ~max(data$latitude)) %>% 
+      setView(0,0, 2)
 ```
 
