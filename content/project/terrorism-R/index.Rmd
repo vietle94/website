@@ -1,7 +1,7 @@
 ---
 title: "Global terrorism"
 date: 2019-05-25T10-24-00
-output: 
+output:
   md_document: default
 ---
 
@@ -93,7 +93,7 @@ data[data$eventid == 198212240004, "longitude"] <- -86.185896
 
 ```
 
-Deal with missing longitude and latitude by using the country location as the incident location. The country location is obtained by using Mapquest API. 
+Deal with missing longitude and latitude by using the country location as the incident location. The country location is obtained by using Mapquest API.
 
 ```{r include=FALSE}
 KEY <- "YVjGrSZqSDBhUnGCcocPjsTwEpoBgaM5"
@@ -107,8 +107,8 @@ baseurl <- "http://www.mapquestapi.com/geocoding/v1/address?"
 
 
 country <- data %>%  
-  filter(is.na(longitude)) %>% 
-  distinct(country_txt) 
+  filter(is.na(longitude)) %>%
+  distinct(country_txt)
 
 country <- country %>% mutate(location = str_replace_all(country_txt, " ", "+"))
 
@@ -120,25 +120,25 @@ country$location[country$location == "Zaire"] <- "Democratic+Republic+of+the+Con
 country$location[country$location == "Soviet+Union"] <- "Russia"
 country$location[country$location == "West+Bank+and+Gaza+Strip"] <- "Gaza+Strip"
 country$location[country$location == "Rhodesia"] <- "Zimbabwe"
-country$location[country$location == "Czechoslovakia"] <- "Czech+Republic" 
+country$location[country$location == "Czechoslovakia"] <- "Czech+Republic"
 
 url <- str_c(baseurl, "key=", KEY, "&location=", country$location, "&outFormat=csv")
 
-missing <- url %>% 
-  map_dfr( ~ read_csv(.) %>% 
-             select(Lat, Lng, GeocodeQuality, GeocodeQualityCode, Country) %>% 
+missing <- url %>%
+  map_dfr( ~ read_csv(.) %>%
+             select(Lat, Lng, GeocodeQuality, GeocodeQualityCode, Country) %>%
              filter(GeocodeQuality == "COUNTRY"))
 
-country <- bind_cols(country,missing) 
+country <- bind_cols(country,missing)
 
-temp <- data %>% 
-  filter(is.na(longitude)) %>% 
-  select(eventid, country_txt) %>% 
+temp <- data %>%
+  filter(is.na(longitude)) %>%
+  select(eventid, country_txt) %>%
   left_join(country) %>%  
   select(eventid, Lng, Lat)
 
-data <- data %>% left_join(temp, by = "eventid") %>% 
-  mutate(longitude = ifelse(is.na(longitude), Lng, longitude)) %>% 
+data <- data %>% left_join(temp, by = "eventid") %>%
+  mutate(longitude = ifelse(is.na(longitude), Lng, longitude)) %>%
   mutate(latitude = ifelse(is.na(latitude), Lat, latitude))
 ```
 
@@ -149,8 +149,8 @@ Missing date and month in the data were recorded as NA, change them to 1. Then c
 data$iday[data$iday == 0] <- 1
 data$imonth[data$imonth == 0] <- 1
 
-data$idate <- data %>% unite(date, iyear, imonth, iday, sep = "-") %>% 
-  mutate(date = lubridate::ymd(date)) %>% 
+data$idate <- data %>% unite(date, iyear, imonth, iday, sep = "-") %>%
+  mutate(date = lubridate::ymd(date)) %>%
   pull(date)
 
 ```
@@ -158,14 +158,14 @@ data$idate <- data %>% unite(date, iyear, imonth, iday, sep = "-") %>%
 Group name contain non UTF-8 characters. The following code will fix it
 
 ```{r}
-data <- data %>% 
+data <- data %>%
   mutate_at(vars(gname, gname2, gname3), function(x){gsub('[^ -~]', '', x)})
 ```
 
 Create a label for leaflet map by making new column called popmap
 
 ```{r}
-data$popmap <- data %>% 
+data$popmap <- data %>%
   mutate(attacktype2_txt = ifelse(is.na(attacktype2_txt)," ", str_c(", ", attacktype2_txt)),
          attacktype3_txt = ifelse(is.na(attacktype3_txt)," ", str_c(", ", attacktype3_txt)),
          weaptype2_txt = ifelse(is.na(weaptype2_txt)," ", str_c(", ", weaptype2_txt)),
@@ -173,8 +173,8 @@ data$popmap <- data %>%
          targtype2_txt = ifelse(is.na(targtype2_txt)," ", str_c(", ", targtype2_txt)),
          targtype3_txt = ifelse(is.na(targtype3_txt)," ", str_c(", ", targtype3_txt)),
          gname2 = ifelse(is.na(gname2)," ", str_c(", ", gname2)),
-         gname3 = ifelse(is.na(gname3)," ", str_c(", ", gname3))) %>% 
-  mutate(popmap = str_c("Country: ", country_txt, " <br/> ", 
+         gname3 = ifelse(is.na(gname3)," ", str_c(", ", gname3))) %>%
+  mutate(popmap = str_c("Country: ", country_txt, " <br/> ",
                         "Date: ", idate, " <br/> ",
                         "Attack type: ", attacktype1_txt, attacktype2_txt, attacktype3_txt, " <br/> ",
                         "Weapon: ", weaptype1_txt, weaptype2_txt, weaptype3_txt, " <br/> ",
@@ -195,11 +195,10 @@ library(leaflet)
 
 data %>%
   filter(idate >= "2000-01-01") %>% 
-  leaflet() %>% 
+  leaflet() %>%
       addTiles() %>%
       addMarkers(~longitude, ~latitude, label = ~data$popmap %>% purrr::map(shiny::HTML) ,
-                 clusterOptions = markerClusterOptions(disableClusteringAtZoom = 12)) %>% 
-      setMaxBounds(~min(data$longitude), ~min(data$latitude), ~max(data$longitude), ~max(data$latitude)) %>% 
+                 clusterOptions = markerClusterOptions(disableClusteringAtZoom = 12)) %>%
+      setMaxBounds(~min(data$longitude), ~min(data$latitude), ~max(data$longitude), ~max(data$latitude)) %>%
       setView(0,0, 2)
 ```
-
