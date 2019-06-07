@@ -7,7 +7,8 @@ output:
 
 ```{r, echo = FALSE}
 knitr::opts_chunk$set(
-  fig.width=12, fig.height=8
+  fig.width=12, fig.height=8,
+  cache = T
 )
 
 ```
@@ -238,12 +239,12 @@ data %>% count(iyear, region_txt) %>% ggplot() + geom_line(aes(iyear, n, color =
 ```{r}
 library(leaflet)
 
-data %>%
-  leaflet() %>% 
-      addTiles() %>%
-      addMarkers(~longitude, ~latitude, label = ~data$popmap %>% purrr::map(shiny::HTML) ,
-                 clusterOptions = markerClusterOptions(disableClusteringAtZoom = 12)) %>% 
-      setMaxBounds(~min(data$longitude), ~min(data$latitude), ~max(data$longitude), ~max(data$latitude)) %>% 
-      setView(0,0, 2)
+#data %>%
+ # leaflet() %>% 
+  #    addTiles() %>%
+   #   addMarkers(~longitude, ~latitude, label = ~data$popmap %>% purrr::map(shiny::HTML) ,
+    #             clusterOptions = markerClusterOptions(disableClusteringAtZoom = 12)) %>% 
+     # setMaxBounds(~min(data$longitude), ~min(data$latitude), ~max(data$longitude), ~max(data$latitude)) %>% 
+      #setView(0,0, 2)
 ```
 
