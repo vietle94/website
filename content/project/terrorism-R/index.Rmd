@@ -2,7 +2,13 @@
 title: "Global terrorism"
 date: 2019-05-25T10-24-00
 output:
-  md_document: default
+  blogdown::html_page:
+    toc: true
+summary: Interactive visualization of global terrorism from 1970 to 2010. An interactive visualization app is at [Global terrorism](https://vietle.shinyapps.io/terrorism-Rshiny/)
+image:
+  caption: Screenshot of [shiny app](https://vietle.shinyapps.io/terrorism-Rshiny/)
+  focal_point: TopLeft
+tags: ["shinyapps", "leaflet", "plotly", "visualization", "R"]
 ---
 
 ```{r, echo = FALSE}
@@ -13,6 +19,38 @@ knitr::opts_chunk$set(
 ```
 
 # Intro
+
+In this project, I created a shiny app which produced interactive visualization for the data set at [Global terrorism](https://vietle.shinyapps.io/terrorism-Rshiny/). All steps of cleaning and preprocessing is shown here.
+
+## About the data set
+
+**Context**
+
+Information on more than 180,000 Terrorist Attacks.  
+
+The Global Terrorism Database (GTD) is an open-source database including information on terrorist attacks around the world from 1970 through 2017. The GTD includes systematic data on domestic as well as international terrorist incidents that have occurred during this time period and now includes more than 180,000 attacks. The database is maintained by researchers at the National Consortium for the Study of Terrorism and Responses to Terrorism (START), headquartered at the University of Maryland.  
+
+[More information](www.start.umd.edu/gtd/)
+
+**Content**  
+
+Geography: Worldwide.  
+
+Time period: 1970-2017, except 1993  
+
+Unit of analysis: Attack  
+
+Variables: >100 variables on location, tactics, perpetrators, targets, and outcomes  
+
+Sources: Unclassified media articles (Note: Please interpret changes over time with caution. Global patterns are driven by diverse trends in particular regions, and data collection is influenced by fluctuations in access to media coverage over both time and place.)
+
+Definition of terrorism:
+
+"The threatened or actual use of illegal force and violence by a non-state actor to attain a political, economic, religious, or social goal through fear, coercion, or intimidation."
+
+See the GTD Codebook for important details on data collection methodology, definitions, and coding schema.
+
+[the GTD Codebook](https://www.start.umd.edu/gtd/downloads/Codebook.pdf)
 
 # Library
 
@@ -147,7 +185,7 @@ data$idate <- data %>% unite(date, iyear, imonth, iday, sep = "-") %>%
 
 ```
 
-Group name contain non UTF-8 characters. The following code will fix it
+Group name contain non UTF-8 characters due to foreign language. The following code will remove it.
 
 ```{r eval=FALSE}
 data <- data %>%
@@ -177,30 +215,6 @@ data$popmap <- data %>%
                         "Property damage: ", str_replace_na(propextent_txt))) %>% pull(popmap)
 ```
 
+# Interactive plot
 
-# Data exploration
-
-```{r}
-data <- read_csv("data/newdat.csv", col_types = cols(
-  iyear = col_integer(),
-  latitude = col_double(),
-  longitude = col_double(),
-  attacktype3_txt = col_character(),
-  gname3 = col_character(),
-  nkill = col_integer(),
-  nwound = col_integer()
-))
-```
-
- Leaflet
-
-```{r}
-data %>%
-  filter(idate >= "2000-01-01") %>% 
-  leaflet() %>%
-      addTiles() %>%
-      addMarkers(~longitude, ~latitude, label = ~popmap %>% purrr::map(shiny::HTML) ,
-                 clusterOptions = markerClusterOptions(disableClusteringAtZoom = 12)) %>%
-      setMaxBounds(~min(data$longitude), ~min(data$latitude), ~max(data$longitude), ~max(data$latitude)) %>%
-      setView(0,0, 2)
-```
+[Available here](https://vietle.shinyapps.io/terrorism-Rshiny/)

@@ -1,0 +1,50 @@
+---
+title: "Global terrorism with leaflet map"
+date: 2019-06-08T10-24-00
+output:
+  blogdown::html_page:
+    toc: true
+summary: A leaflet map for global terrorism data base since 2000 . An interactive visualization app is at [Global terrorism](https://vietle.shinyapps.io/terrorism-Rshiny/)
+image:
+  caption: Screenshot of [shiny app](https://vietle.shinyapps.io/terrorism-Rshiny/)
+  focal_point: TopLeft
+tags: ["shinyapps", "leaflet", "plotly", "visualization", "R"]
+---
+
+# Intro
+
+The map shows all terrorist incidents happen around the world since 2000. The plugin is heavy so it might takes a few second to load.  
+
+Full project available [here](vietle.info/project/terrorism-r/)
+Interactive plots available [here](https://vietle.shinyapps.io/terrorism-Rshiny/)
+
+# Map
+
+** Zoom-in and hover on each location for more detail **
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(leaflet)
+
+data <- read_csv("data/newdat.csv", col_types = cols(
+  iyear = col_integer(),
+  latitude = col_double(),
+  longitude = col_double(),
+  attacktype3_txt = col_character(),
+  gname3 = col_character(),
+  nkill = col_integer(),
+  nwound = col_integer()
+))
+
+data %>%
+  filter(idate >= "2000-01-01") %>% 
+  leaflet() %>%
+      addTiles() %>%
+      addMarkers(~longitude, ~latitude, label = ~popmap %>% purrr::map(shiny::HTML) ,
+                 clusterOptions = markerClusterOptions(disableClusteringAtZoom = 12)) %>%
+      setMaxBounds(~min(data$longitude), ~min(data$latitude), ~max(data$longitude), ~max(data$latitude)) %>%
+      setView(0,0, 2)
+
+```
+
+End
