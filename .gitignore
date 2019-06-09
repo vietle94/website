@@ -6,3 +6,4 @@
 *_cache/
 
 /public
+*.csv
