@@ -13,7 +13,7 @@ tags: ["shinyapps", "leaflet", "plotly", "visualization", "R"]
 
 # Intro
 
-The map shows all terrorist incidents happen around the world since 2000. The plugin is heavy so it might takes a few second to load.  
+This is a leaflet map which shows all terrorist incidents happen around the world since 2000. The map is heavy so it might takes a few second to load.  
 
 Full project available [here](vietle.info/project/terrorism-r/)
 Interactive plots available [here](https://vietle.shinyapps.io/terrorism-Rshiny/)
@@ -22,7 +22,7 @@ Interactive plots available [here](https://vietle.shinyapps.io/terrorism-Rshiny/
 
 ** Zoom-in and hover on each location for more detail **
 
-```{r message=FALSE, warning=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 library(tidyverse)
 library(leaflet)
 
@@ -36,7 +36,10 @@ data <- read_csv("data/newdat.csv", col_types = cols(
   nwound = col_integer()
 ))
 
-data %>%
+
+
+
+map <- data %>%
   filter(idate >= "2000-01-01") %>% 
   leaflet() %>%
       addTiles() %>%
@@ -44,7 +47,9 @@ data %>%
                  clusterOptions = markerClusterOptions(disableClusteringAtZoom = 12)) %>%
       setMaxBounds(~min(data$longitude), ~min(data$latitude), ~max(data$longitude), ~max(data$latitude)) %>%
       setView(0,0, 2)
-
 ```
 
-End
+
+<iframe width = "1200" height = "800" name = "map" src="figure.html"></iframe>
+
+.

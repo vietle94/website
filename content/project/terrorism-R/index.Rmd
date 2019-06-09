@@ -218,3 +218,4 @@ data$popmap <- data %>%
 # Interactive plot
 
 [Available here](https://vietle.shinyapps.io/terrorism-Rshiny/)
+
