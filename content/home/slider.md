@@ -28,7 +28,7 @@ align = "center"  # Choose `center`, `left`, or `right`.
   #   Activate the button by specifying a URL and button label below.
   #   Deactivate by commenting out parameters, prefixing lines with `#`.
   cta_label = "Global terrorism"
-  cta_url = "#about"
+  cta_url = "https://vietle.shinyapps.io/terrorism-Rshiny/"
   cta_icon_pack = "fas"
   cta_icon = "chart-line"
 
