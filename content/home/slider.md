@@ -14,8 +14,8 @@ interval = 3500
 # Slides.
 # Duplicate an `[[item]]` block to add more slides.
 [[item]]
-title = "Welcome to my website"
-content = "Scroll down to explore"
+title = "Interactive visualization"
+content = "<br>"
 align = "center"  # Choose `center`, `left`, or `right`.
 
   # Overlay a color or image (optional).
@@ -27,10 +27,10 @@ align = "center"  # Choose `center`, `left`, or `right`.
   # Call to action button (optional).
   #   Activate the button by specifying a URL and button label below.
   #   Deactivate by commenting out parameters, prefixing lines with `#`.
-#  cta_label = "Projects"
-#  cta_url = "#about"
-#  cta_icon_pack = "fas"
-#  cta_icon = "graduation-cap"
+  cta_label = "Global terrorism"
+  cta_url = "#about"
+  cta_icon_pack = "fas"
+  cta_icon = "chart-line"
 
 [[item]]
   title = "Recent Projects"
@@ -38,7 +38,7 @@ align = "center"  # Choose `center`, `left`, or `right`.
   align = "center"
 
   overlay_color = "#111"  # An HTML color value.
-  overlay_img = "headers/keyboard-1385706_1280.jpg"  # Image path relative to your `static/img/` folder.
+  overlay_img = "headers/mockup-863469_1920.jpg"  # Image path relative to your `static/img/` folder.
   overlay_filter = 0.5  # Darken the image. Value in range 0-1.
   cta_label = "Explore"
   cta_url = "#projects"
@@ -51,7 +51,7 @@ align = "center"  # Choose `center`, `left`, or `right`.
   align = "center"
 
   overlay_color = "#333"  # An HTML color value.
-  overlay_img = "headers/mockup-863469_1920.jpg"  # Image path relative to your `static/img/` folder.
+  overlay_img = "headers/keyboard-1385706_1280.jpg"  # Image path relative to your `static/img/` folder.
   overlay_filter = 0.5  # Darken the image. Value in range 0-1.
   cta_label = "Explore"
   cta_url = "#gallery"
