@@ -18,11 +18,9 @@ This is a leaflet map which shows all terrorist incidents happen around the worl
 Full project available [here](vietle.info/project/terrorism-r/)
 Interactive plots available [here](https://vietle.shinyapps.io/terrorism-Rshiny/)
 
-# Map
+# Interactive map
 
-** Zoom-in and hover on each location for more detail **
-
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r message=FALSE, warning=FALSE, cache = TRUE}
 library(tidyverse)
 library(leaflet)
 
@@ -39,7 +37,7 @@ data <- read_csv("data/newdat.csv", col_types = cols(
 
 
 
-map <- data %>%
+data %>%
   filter(idate >= "2000-01-01") %>% 
   leaflet() %>%
       addTiles() %>%
@@ -49,7 +47,5 @@ map <- data %>%
       setView(0,0, 2)
 ```
 
+*Zoom-in and hover on each location for more detail*
 
-<iframe width = "1200" height = "800" name = "map" src="figure.html"></iframe>
-
-.
