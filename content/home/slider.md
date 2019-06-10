@@ -15,7 +15,7 @@ interval = 3500
 # Duplicate an `[[item]]` block to add more slides.
 [[item]]
 title = "Interactive visualization"
-content = "<br>"
+content = "Explore my shinyapps"
 align = "center"  # Choose `center`, `left`, or `right`.
 
   # Overlay a color or image (optional).
