@@ -15,7 +15,7 @@ tags: ["shinyapps", "leaflet", "plotly", "visualization", "R"]
 
 This is a leaflet map which shows all terrorist incidents happen around the world since 2000. The map is heavy so it might takes a few second to load.  
 
-Full project available [here](vietle.info/project/terrorism-r/)
+Full project available [here](vietle.info/project/terrorism-r/)  
 Interactive plots available [here](https://vietle.shinyapps.io/terrorism-Rshiny/)
 
 # Interactive map
