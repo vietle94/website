@@ -28,7 +28,7 @@ subtitle = ""
 [[feature]]
   icon = "database"
   icon_pack = "fas"
-  name = "SQL"
+  name = "SQL & NoSQL"
 
 [[feature]]
   icon = "git"
