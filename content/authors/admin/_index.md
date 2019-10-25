@@ -9,7 +9,7 @@ education:
     year: 2018
   - course: MSc Remote Sensing - Atmospheric Sciences
     institution: University of Helsinki
-    year: 20019
+    year: 2019
 #  - course: BSc in Artificial Intelligence
 #    institution: Massachusetts Institute of Technology
 #    year: 2008
