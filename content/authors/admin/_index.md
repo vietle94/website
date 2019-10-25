@@ -7,7 +7,7 @@ education:
   - course: Environmental Engineering
     institution: Metropolia Univeristy of Applied Sciences
     year: 2018
-  - course: Master degree in Remote Sensing - Atmospheric Sciences
+  - course: MSc Remote Sensing - Atmospheric Sciences
     institution: University of Helsinki
     year: 20019
 #  - course: BSc in Artificial Intelligence
