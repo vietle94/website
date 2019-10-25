@@ -4,12 +4,13 @@ authors:
 bio: Data analyst
 education:
   courses:
-  - course: Environmental Engineering
-    institution: Metropolia Univeristy of Applied Sciences
-    year: 2018
   - course: MSc Remote Sensing - Atmospheric Sciences
     institution: University of Helsinki
     year: 2019
+  - course: Environmental Engineering
+    institution: Metropolia Univeristy of Applied Sciences
+    year: 2018
+
 #  - course: BSc in Artificial Intelligence
 #    institution: Massachusetts Institute of Technology
 #    year: 2008
