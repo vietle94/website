@@ -5,11 +5,11 @@ bio: Data analyst
 education:
   courses:
   - course: Environmental Engineering
-    institution: Helsinki Metropolia Univeristy of Applied Sciences
+    institution: Metropolia Univeristy of Applied Sciences
     year: 2018
-#  - course: MEng in Artificial Intelligence
-#    institution: Massachusetts Institute of Technology
-#    year: 2009
+  - course: Master degree in Remote Sensing - Atmospheric Sciences
+    institution: University of Helsinki
+    year: 20019
 #  - course: BSc in Artificial Intelligence
 #    institution: Massachusetts Institute of Technology
 #    year: 2008
@@ -44,4 +44,5 @@ user_groups:
 - Researchers
 - Visitors
 ---
-Viet Le is a data analyst with environmental engineering background. He fell in love with data analyst after reading psychology books on human behavior. This inspired him to expand his field of interests from environmental data into human statistics.<br> Hoping to control humanity, he currently spending his time to show his findings and plans on this website.
+Looking for new challenges <br>
+I am motivated to learn new skills and knowledge. I am currently busy pursuing my Master degree in Remote Sensing, and all my projects relating to data analyzing will be on this website.
