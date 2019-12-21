@@ -41,8 +41,9 @@ subtitle = ""
   name = "Statistics"
 
 [[feature]]
-  icon = "cubes"
+  icon = "globe-americas"
   icon_pack = "fas"
-  name = "3D-modelling"
+  name = "GIS"
+
 
 +++
