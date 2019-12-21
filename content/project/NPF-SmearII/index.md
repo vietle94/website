@@ -21,25 +21,22 @@ links:
 ---
 # Table of contents
 
-1. [Get data](#ss)
+1. [Load libraries](#load-libraries)
 2. [Check data](#check-data)
 3. [Load data](#load-data)
-4. [Preprocess](#Preprocess)
-5. [Remove outliers](#Remove-outliers)
-6. [Aggregate data and add proxy variable](#Aggregate-data)
-7. [Event frequency](#Event-frequency)
-8. [Correlation plot](#Correlation-plot)
-9. [Cross-correlation](#Cross-correlation)
-10. [Time-series plot](#Time-series-plot)
-11. [Seasonal pattern based on Event](#Seasonal-pattern-based-on-Event)
-12. [Diurnal pattern based on Event](#Diurnal-pattern-based-on-Event)
-13. [Check normality assumptions of all parameters for each Event category](#Check-normality-assumptions-of-all-parameters-for-each-Event-category)
-14. [Kruskal-Wallis test](#Kruskal-Wallis-test)
-15. [PCA](#PCA)
-16. [K-nearest neighbor](#K-nearest-neighbor)
-
-# Ss d
-
+4. [Preprocess](#preprocess)
+5. [Remove outliers](#remove-outliers)
+6. [Aggregate data and add proxy variable](#aggregate-data)
+7. [Event frequency](#event-frequency)
+8. [Correlation plot](#correlation-plot)
+9. [Cross-correlation](#cross-correlation)
+10. [Time-series plot](#time-series-plot)
+11. [Seasonal pattern based on Event](#seasonal-pattern-based-on-Event)
+12. [Diurnal pattern based on Event](#diurnal-pattern-based-on-Event)
+13. [Check normality assumptions of all parameters for each Event category](#check-normality-assumptions-of-all-parameters-for-each-Event-category)
+14. [Kruskal-Wallis test](#kruskal-Wallis-test)
+15. [PCA](#pca)
+16. [K-nearest neighbor](#k-nearest-neighbor)
 
 # Load libraries
 
@@ -604,19 +601,6 @@ fig.subplots_adjust(hspace = 0.5)
 
 
 # Correlation plot
-<b> Interactive color bar <b>
-
-
-```python
-cmap = sns.choose_diverging_palette(as_cmap = True) # Run this first
-```
-
-
-    interactive(children=(IntSlider(value=220, description='h_neg', max=359), IntSlider(value=10, description='h_p…
-
-
-Change the color bar above then run the code below again to apply new color bar (Don't run the code above again)
-
 
 ```python
 fig, ax = plt.subplots(figsize = (17,12))
@@ -624,14 +608,6 @@ sns.heatmap(combined_hourly.corr(), cmap = cmap, center=0.00, ax = ax, annot = T
 ax.set_ylim(combined_hourly.shape[1]-1,0)
 ax.set_title('Hourly correlation', weight = "bold", fontsize=24)
 ```
-
-
-
-
-    Text(0.5, 1, 'Hourly correlation')
-
-
-
 
 ![png](./Project-Copy1_78_1.png)
 
