@@ -413,8 +413,6 @@ df_raw.boxplot(figsize = (15, 7))
 ![png](./Project-Copy1_57_1.png)
 
 
-<div class="alert alert-block alert-info">
-
 Detecting outlier using boxplot for the raw time-series of two years is not ideal because:
 
 - Time-series are usually not stationary
@@ -694,7 +692,7 @@ ax.set_title('Value of each cell is time lag (hour)')
 ![png](./Project-Copy1_81_1.png)
 
 
-<div class="alert alert-block alert-info"> Cross-correlation is a measure of similarity of two time-series as a function of a time-lag applied to one of them. In this result, those pairs of parameters that have time-lag too far away from 0 is probably not similar
+Cross-correlation is a measure of similarity of two time-series as a function of a time-lag applied to one of them. In this result, those pairs of parameters that have time-lag too far away from 0 is probably not similar
 
 # Time-series plot
 
@@ -866,7 +864,7 @@ fig.suptitle('Check normality of all parameters for Event', fontweight = 'bold',
 ![png](./Project-Copy1_98_1.png)
 
 
-<div class="alert alert-block alert-info"> They are not normally distributed, need to use Non-parametric tests
+They are not normally distributed, need to use Non-parametric tests
 
 # Kruskal-Wallis test
 
@@ -997,7 +995,7 @@ for i, col in enumerate(combined_daily.columns[1:]):
 
 
 
-<div class="alert alert-block alert-info">Significant differences found in all parameters except CS_sink between 2008 and 2009 events during April, May and June
+Significant differences found in all parameters except CS_sink between 2008 and 2009 events during April, May and June
 
 #### Boxplot comparing value of CS_sink in event days in 2008 and 2009
 
@@ -1030,7 +1028,7 @@ fig.suptitle('CS_sink on event days in 2008 and 2009 April, May and June', fontw
 
 # PCA
 
-<div class="alert alert-block alert-info"> This PCA method ignore temporal variance of the data. Each observation is treated as independent from each other
+This PCA method ignore temporal variance of the data. Each observation is treated as independent from each other
 
 
 ```python
@@ -1077,7 +1075,7 @@ ax.set_ylabel('Explained variance')
 ![png](./Project-Copy1_111_1.png)
 
 
-<div class="alert alert-block alert-info"> Reduce data to only 6 variables. Not impressive at all
+Reduce data to only 6 variables. Not impressive at all
 
 ## Plot data on first two components
 
@@ -1104,11 +1102,11 @@ print(f'Explained variance of each components{pca.explained_variance_ratio_[:2]}
 ![png](./Project-Copy1_114_1.png)
 
 
-<div class="alert alert-block alert-info"> With just two components, PCA is able to separate Event and Nonevent visually :)
+With just two components, PCA is able to separate Event and Nonevent visually :)
 
 # K-nearest neighbor
 
-<div class="alert alert-block alert-info"> K-nearest neighbor method ignore temporal variance of the data. Each observation is treated as independent from each other
+K-nearest neighbor method ignore temporal variance of the data. Each observation is treated as independent from each other
 
 
 ```python
@@ -1152,11 +1150,11 @@ fig.suptitle('Confusion matrix for K-nearest neighbor algorithm', size = 17, fon
 ![png](./Project-Copy1_118_1.png)
 
 
-<div class="alert alert-block alert-info"> Even though overall accuracy is only 0.61, the algorithm is doing extremely well at not mixing up prediction between Event and Nonevent.
+Even though overall accuracy is only 0.61, the algorithm is doing extremely well at not mixing up prediction between Event and Nonevent.
 
 #### K-fold cross validation
 
-<div class="alert alert-block alert-info"> Just to give better estimate of accuracy for new unseen data
+Just to give better estimate of accuracy for new unseen data
 
 
 ```python
@@ -1197,4 +1195,4 @@ print("Validation accuracy (averaged over 5 folds):", acc_val)
     Validation accuracy (averaged over 5 folds): 0.5205762871988663
 
 
-<div class="alert alert-block alert-info"> The overall accuracy in smaller in cross-validation. It shows that in the first train and test split, we were lucky at getting indices to get the high accuracy in the test set
+The overall accuracy in smaller in cross-validation. It shows that in the first train and test split, we were lucky at getting indices to get the high accuracy in the test set
