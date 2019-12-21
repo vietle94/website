@@ -4,14 +4,14 @@ authors:
 categories: []
 date: "2019-10-31T00:00:00Z"
 draft: false
-featured: false
+featured: true
 image:
-  caption: ""
-  focal_point: ""
+  caption: Hourly correlation of gases
+  focal_point: Smart
 projects: []
 subtitle: Data collected at SmearII station in Hyytiälä, Finland
 summary: Analyze new particle formation in connections with other gases
-tags: []
+tags: ["Python"]
 title: New particle formation in Hyytiälä
 links:
   - icon_pack: fab
@@ -37,6 +37,12 @@ links:
 14. [Kruskal-Wallis test](#kruskal-Wallis-test)
 15. [PCA](#pca)
 16. [K-nearest neighbor](#k-nearest-neighbor)
+
+# Intro
+
+One of the major uncertainties in predicting the Earth's climate are the atmospheric aerosol particles. Being highly variable in space and time, aerosols are very difficult to quantify exactly. This leads to uncertainties in understanding the radiative balance in the atmosphere and predicting precipitation. While primary emissions are huge sources of aerosols particles, New Particle Formation (NPF) is one of the major sources of increase in the particle number in the atmosphere and are seen to occur in diverse atmospheric conditions.
+
+This is the analyses that I made together with Steven Job Thomas. Full report can be found in the beginning by clicking the PDF button, also full code and be found at my github page (also in the beginning of this page).
 
 # Load libraries
 
