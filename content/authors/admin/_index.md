@@ -46,4 +46,4 @@ user_groups:
 - Visitors
 ---
 Looking for new challenges <br>
-I am motivated to learn new skills and knowledge. I am currently busy pursuing my Master degree in Remote Sensing, and all my projects relating to data analyzing will be on this website.
+I am motivated to learn new skills and knowledge. I am currently pursuing my Master degree in Remote Sensing, and all my projects relating to data analyzing will be on this website.
